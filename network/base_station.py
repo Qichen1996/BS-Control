@@ -55,7 +55,8 @@ class BaseStation:
     other_obs_space = concat_box_envs(public_obs_space, mutual_obs_space)
     total_obs_space = concat_box_envs(
         self_obs_space, duplicate_box_env(
-            other_obs_space, config.numBS - 1))
+            other_obs_space, 6))
+    # total_obs_space = self_obs_space
     
     public_obs_dim = box_env_ndims(public_obs_space)
     private_obs_dim = box_env_ndims(private_obs_space)
@@ -90,6 +91,7 @@ class BaseStation:
         self.ues.clear()
         self.queue.clear()
         self.covered_ues.clear()
+        self._ue_stats = np.zeros((2, 2))
         self.sleep = 0
         self.conn_mode = 1
         self.num_ant = self.max_antennas
@@ -105,6 +107,8 @@ class BaseStation:
         self._arrival_rate = 0
         self._energy_consumed = 0
         self._sleep_time = np.zeros(self.num_sleep_modes)
+        self.switch_sleep = 0
+        self.switch_antenna = 0
         # self._energy_consumed = defaultdict(float)
         self._buffer = np.zeros(self.buffer_shape, dtype=np.float32)
         # self._buffer = np.full(self.buffer_shape, np.nan, dtype=np.float32)
@@ -151,6 +155,7 @@ class BaseStation:
     def reset_stats(self):
         self._steps = 0
         self._timer = 0
+        self._ue_stats[:] = 0
         # self._disc_all = 0  # used to mark a disconnect_all action
         self._arrival_rate = 0
         self._energy_consumed = 0
@@ -223,12 +228,14 @@ class BaseStation:
         self.switch_antennas(int(action[0]))
         self.switch_sleep_mode(int(action[1]))
         self.switch_connection_mode(int(action[2]) - 1)
+        # self.switch_connection_mode(1)
     
     def switch_antennas(self, opt):
         if DEBUG:
             assert opt in range(self.num_ant_switch_opts)
         num_switch = self.ant_switch_opts[opt]
         if num_switch == 0: return
+        self.switch_antenna += 1
         energy_cost = self.ant_switch_energy * abs(num_switch)
         if TRAIN:  # reduce number of antenna switches
             self.consume_energy(energy_cost, 'antenna')
@@ -253,6 +260,7 @@ class BaseStation:
         if mode == self.sleep:
             self._next_sleep = mode
             return
+        self.switch_sleep += 1
         if TRAIN:  # reduce number of sleep switches
             self.consume_energy(self.sleep_switch_energy[mode], 'sleep')
         # if mode == 3 and any(ue.status < 2 for ue in self.covered_ues):
@@ -304,6 +312,10 @@ class BaseStation:
         assert ue.bs is None
         self.ues[ue.id] = ue
         ue.bs = self
+        if self.id not in ue.serve_bss:
+            ue.serve_bss[self.id] = self
+        if self.id not in ue.con_bss:
+            ue.con_bss[self.id] = self
         ue.status = UEStatus.ACTIVE
         self.update_power_allocation()
         if DEBUG:
@@ -355,6 +367,8 @@ class BaseStation:
         assert ue.idle
         self.queue.append(ue)
         ue.bs = self
+        if self.id not in ue.serve_bss:
+            ue.serve_bss[self.id] = self
         ue.status = UEStatus.WAITING
         if DEBUG:
             debug('BS {}: added UE {} to queue'.format(self.id, ue.id))
@@ -451,6 +465,7 @@ class BaseStation:
             info('BS {}: disconnects {} UEs'.format(self.id, self.num_ue))
         for ue in list(self.ues.values()):
             ue.disconnect()
+        for ue in self.net.ues.values():
             if TRAIN:
                 self.consume_energy(self.disconnect_energy, 'disconnect')
             else:
@@ -519,17 +534,59 @@ class BaseStation:
         self.update_connections()
         self.consume_energy(self.operation_pc * dt, 'operation')
         self.update_timer(dt)
+    
+    @property
+    def drop_ratio(self):
+        """ Average ratio of dropped demand for each app category in the current step. """
+        return div0(self._ue_stats[1, 1], self._ue_stats[1, 0])
 
+    @property
+    def delay_ratio(self):
+        """ Average delay/budget for each app category in the current step. """
+        return div0(self._ue_stats[0, 1], self._ue_stats[0, 0])
+    
+    def get_reward(self, w_qos, w_xqos):
+        pc_kw = self.power_consumption * 1e-3
+        n_done = self._ue_stats[0,0]
+        q_del = self.delay_ratio
+        n_drop = self._ue_stats[1,0]
+        q_drop = self.drop_ratio
+        n = n_done + n_drop + 1e-6
+        r_qos = (-n_drop * q_drop + w_xqos * n_done * (1 - q_del)) / n
+        reward = w_qos * r_qos - pc_kw
+        return reward
+        
+    # @timeit
+    # @cache_obs
+    # def get_observation(self):
+    #     obs = [self.observe_self()]
+    #     for bs in self.net.bss.values():
+    #         if bs is self: continue
+    #         obs.append(bs.observe_self()[:bs.public_obs_dim])
+    #         obs.append(self.observe_mutual(bs))
+    #     return np.concatenate(obs, dtype=np.float32)
+    
     @timeit
     @cache_obs
     def get_observation(self):
         obs = [self.observe_self()]
+        num_bs = 0
         for bs in self.net.bss.values():
             if bs is self: continue
-            obs.append(bs.observe_self()[:bs.public_obs_dim])
-            obs.append(self.observe_mutual(bs))
+            if self.neighbor_dist(bs.id) > 0.45: continue
+            pub_obs = bs.observe_self()[:bs.public_obs_dim]
+            mut_obs = self.observe_mutual(bs)
+            obs.append(pub_obs)
+            obs.append(mut_obs)
+            num_bs += 1
+        while num_bs < 6:
+            pub_zero = np.zeros_like(pub_obs)
+            mut_zero = np.zeros_like(mut_obs)
+            obs.append(pub_zero)
+            obs.append(mut_zero)
+            num_bs += 1
         return np.concatenate(obs, dtype=np.float32)
-
+    
     @timeit
     @cache_obs
     def observe_self(self):

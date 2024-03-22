@@ -105,7 +105,7 @@ def div0(x, y, eps=1e-10):
 
 def get_run_dir(args, env_args):
     return (Path(os.path.dirname(os.path.abspath(__file__))) / "results"
-            / args.env_name / (args.group_name or env_args.scenario)
+            / args.env_name / "B"
             / args.algorithm_name / args.experiment_name)
 
 # def pd2np(func):
