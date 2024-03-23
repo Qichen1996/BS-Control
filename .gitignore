@@ -16,7 +16,6 @@
 /results/**/*/run*/
 !/results/**/*/wandb/*
 /results/
-/analysis/
 /wandb/
 # /config.py
 critic*.pt
