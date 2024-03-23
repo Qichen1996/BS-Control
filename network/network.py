@@ -23,13 +23,12 @@ class MultiCellNetwork:
     global_obs_space = make_box_env([[0, np.inf]] * (1 + 4 + numApps + 4))
     id_obs_space = make_box_env([[0, np.inf]])
     bs_obs_space = BaseStation.total_obs_space
-    # net_obs_space = concat_box_envs(
-    #     global_obs_space,
-    #     duplicate_box_env(bs_obs_space, config.numBS),
-    #     id_obs_space)
     net_obs_space = concat_box_envs(
         global_obs_space,
-        bs_obs_space)
+        duplicate_box_env(bs_obs_space, config.numBS))
+    # net_obs_space = concat_box_envs(
+    #     global_obs_space,
+    #     bs_obs_space)
     # net_obs_space = global_obs_space
 
 
