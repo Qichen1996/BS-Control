@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Energy-Efficient Collaborative Base Station Control in Massive MIMO Cellular Networks
 
 This repository is associated with the publication "[Energy-Efficient Collaborative Base Station Control in Massive MIMO Cellular Networks: A Multi-Agent Reinforcement Learning Approach](https://kth.diva-portal.org/smash/record.jsf?pid=diva2%3A1752823&dswid=-8202)". This work provides a Multi-Agent Reinforcement Learning (MARL) approach to minimize the total energy consumption of multiple massive MIMO base stations (BSs) in a multi-cell network, while maintaining overall quality-of-service.
@@ -67,3 +68,6 @@ The reward function is a combination of
 ## Contributions and Feedback
 
 Feel free to provide feedback or contribute to this project. You can either fork this repository or open a new issue if you find a bug or have a feature request.
+=======
+# BS-Control
+>>>>>>> db0671c60fdcc9b9a31d7d6490981fa2b06a937d
