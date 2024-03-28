@@ -36,6 +36,7 @@ class UserEquipment:
         self._sinr_stats = Counter()
         self.serve_bss = dict()
         self.con_bss = dict()
+        self.wait_time = 0
 
     # define boolean properties for each UE status
     for status in UEStatus._member_names_:
@@ -80,6 +81,11 @@ class UserEquipment:
             if p > self.signal_thresh:
                 bs.add_to_cell(self)
                 q.append((p / (K + 1), i))
+        if not q:
+            sorted_gains = sorted(enumerate(gains), key=lambda x: x[1], reverse=True)
+            for i in sorted_gains[:1]:
+                self.net.bss[i[0]].add_to_cell(self)
+                q.append((0, i[0]))
         self._cover_cells = [it[1] for it in sorted(q, reverse=True)]
         return gains
 
@@ -210,8 +216,6 @@ class UserEquipment:
             for bs_id in self._cover_cells:
                 bs = self.net.get_bs(bs_id)
                 bs._ue_stats[1] += [1, self.demand / self.total_demand]
-            # for bs in self.serve_bss.values():
-            #     bs._ue_stats[1] += [1, self.demand / self.total_demand]
         else:
             for bs in self.con_bss.values():
             # for bs_id in self._cover_cells:
@@ -247,6 +251,8 @@ class UserEquipment:
     def step(self, dt):
         # DEBUG and debug(f'<< {self}')
         self.delay += dt
+        if not self.bs:
+            self.wait_time += dt
         if EVAL and self.active:
             self.t_served += dt
         # if self.pos[0] == 499.9516966962032:

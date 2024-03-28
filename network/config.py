@@ -60,6 +60,7 @@ bsPositions = np.array(centers)
 areaSize = np.array([w+100, h+100])
 print(areaSize)
 
+# areaSize = np.array([2.5, 2.5]) * interBSDist * 4
 # bsPositions = np.vstack([
 #     [areaSize / 2],
 #     np.array(

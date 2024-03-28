@@ -91,7 +91,7 @@ def get_model_dir(args, env_args, run_dir, version=''):
 env = make_env(env_args, seed=args.seed)
 
 obs_space = env.observation_space[0]
-cent_obs_space = env.cent_observation_space
+cent_obs_space = env.cent_observation_space[0]
 action_space = env.action_space[0]
 
 run_dir = get_run_dir(args, env_args)
@@ -177,6 +177,7 @@ def simulate():
     # info['w_pc'] = env.w_pc
     info['w_qos'] = env.w_qos
     info['w_xqos'] = env.w_xqos
+    info['wait_time'] = env.net.wait_time
     print(info)
     
     save_path = args.perf_save_path

@@ -534,7 +534,11 @@ class BaseStation:
         self.update_connections()
         self.consume_energy(self.operation_pc * dt, 'operation')
         self.update_timer(dt)
-    
+
+    @property
+    def get_pc(self):
+        return self.power_consumption
+
     @property
     def drop_ratio(self):
         """ Average ratio of dropped demand for each app category in the current step. """
@@ -544,6 +548,14 @@ class BaseStation:
     def delay_ratio(self):
         """ Average delay/budget for each app category in the current step. """
         return div0(self._ue_stats[0, 1], self._ue_stats[0, 0])
+
+    @property
+    def ue_info(self):
+        thrps = np.zeros(3 + 1)
+        for ue in self.ues.values():
+            thrps[ue.status] += ue.required_rate
+            thrps[-1] += ue.data_rate
+        return thrps
     
     def get_reward(self, w_qos, w_xqos):
         pc_kw = self.power_consumption * 1e-3

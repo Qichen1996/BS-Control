@@ -207,7 +207,7 @@ class MappoTrainer(BaseTrainer):
         self.huber_delta = args.huber_delta
         self.recurrent_N = args.recurrent_N
         
-        cent_observation_space = self.envs.cent_observation_space if \
+        cent_observation_space = self.envs.cent_observation_space[0] if \
             self.use_centralized_V else self.envs.observation_space[0]
         
         self.policy = MappoPolicy(
@@ -219,7 +219,7 @@ class MappoTrainer(BaseTrainer):
         
         if self.model_dir is not None:
             self.load(version=self.all_args.model_version)
-        
+
         self.buffer = SharedReplayBuffer(
             self.all_args,
             self.num_agents,
@@ -490,8 +490,8 @@ class MappoTrainer(BaseTrainer):
             # log information
             if episode % self.log_interval == 0:
                 rew_df = pd.concat([pd.DataFrame(d['step_rewards']) for d in infos])
-                rew_info = rew_df.describe().loc[['mean', 'std', 'min', 'max']].unstack()
-                # rew_info = rew_df.describe().loc[['mean']].unstack()
+                # rew_info = rew_df.describe().loc[['mean', 'std', 'min', 'max']].unstack()
+                rew_info = rew_df.describe().loc[['mean']].unstack()
                 rew_info.index = ['_'.join(idx) for idx in rew_info.index]
                 train_infos.update(
                     sm3_ratio_mean = np.mean([d['sm3_ratio'] for d in infos]),
@@ -507,6 +507,7 @@ class MappoTrainer(BaseTrainer):
     def warmup(self):
         # reset env
         obs, cent_obs, avail_actions = self.envs.reset()
+        print(cent_obs[0].shape)
         print(obs.shape)
         print(cent_obs.shape)
 
