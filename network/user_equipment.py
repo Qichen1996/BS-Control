@@ -34,6 +34,9 @@ class UserEquipment:
         self._thruput = None
         self._cover_cells = []
         self._sinr_stats = Counter()
+        self.serve_bss = dict()
+        self.con_bss = dict()
+        self.wait_time = 0
 
     # define boolean properties for each UE status
     for status in UEStatus._member_names_:
@@ -78,6 +81,11 @@ class UserEquipment:
             if p > self.signal_thresh:
                 bs.add_to_cell(self)
                 q.append((p / (K + 1), i))
+        if not q:
+            sorted_gains = sorted(enumerate(gains), key=lambda x: x[1], reverse=True)
+            for i in sorted_gains[:1]:
+                self.net.bss[i[0]].add_to_cell(self)
+                q.append((0, i[0]))
         self._cover_cells = [it[1] for it in sorted(q, reverse=True)]
         return gains
 
@@ -204,6 +212,15 @@ class UserEquipment:
 
     def quit(self):
         self.disconnect()
+        if self.demand > 0.:
+            for bs_id in self._cover_cells:
+                bs = self.net.get_bs(bs_id)
+                bs._ue_stats[1] += [1, self.demand / self.total_demand]
+        else:
+            for bs in self.con_bss.values():
+            # for bs_id in self._cover_cells:
+                # bs = self.net.get_bs(bs_id)
+                bs._ue_stats[0] += [1, self.delay / self.delay_budget]
         for i in self._cover_cells:
             self.net.get_bs(i).remove_from_cell(self)
         if self.demand <= 0.:
@@ -234,8 +251,18 @@ class UserEquipment:
     def step(self, dt):
         # DEBUG and debug(f'<< {self}')
         self.delay += dt
+        if not self.bs:
+            self.wait_time += dt
         if EVAL and self.active:
             self.t_served += dt
+        # if self.pos[0] == 499.9516966962032:
+        #     print(f'cover: {self._cover_cells}, serve_bss: {self.serve_bss}, con_bss: {self.con_bss}, demand: {self.demand}, status: {self.status}')
+            # print(f'bs: {self.bs}, serve_bss: {self.serve_bss}, con_bss: {self.con_bss}, demand: {self.demand}, status: {self.status}')
+            # for bs in self.net.bss.values():
+            #     if bs.id == 0:
+            #         print(f'sleep: {bs.sleep}, next_sleep: {bs._next_sleep} conn: {bs.conn_mode}')
+            # if self.bs:        
+            #     print(f'que: {self.bs.queue}, bs_sleep: {self.bs.sleep}, bs_next_sleep: {self.bs._next_sleep}, bs_conn: {self.bs.conn_mode}')
         if self.active:
             self.demand -= self.data_rate * dt
         if self.demand <= 0 or self.delay >= self.delay_budget:

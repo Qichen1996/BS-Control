@@ -161,5 +161,16 @@ def main(args):
     trainer.close()
 
 
+def runtime(run_time):
+    hours = int(run_time // 3600)
+    minutes = int((run_time % 3600) // 60)
+    seconds = int(run_time % 60)
+    print(int(run_time))
+    print(f"程序运行时间：{hours}小时 {minutes}分钟 {seconds}秒")
+
 if __name__ == "__main__":
+    start_time = time.time()
     main(sys.argv[1:])
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    runtime(elapsed_time)

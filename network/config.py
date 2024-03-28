@@ -4,7 +4,7 @@ from utils import dB2lin, lin2dB
 renderMode = 'none'
 
 # base station params
-numBS = 7
+numBS = 49
 interBSDist = 400  # the distance between two adjacent BSs
 # cellRadius = 750  # the radius of a hexagon cell in meters
 txPower = 0.2  # average transmit power per antenna in watts
@@ -38,18 +38,87 @@ noiseSpectralDensity = dB2lin(-174 - 30 + 7)
 ueHeight = 1.5  # height of a UE in meters
 
 # default network configuration
-areaSize = np.array([2.5, 2.5]) * interBSDist
-bsPositions = np.vstack([
-    [areaSize / 2],
-    np.array(
-        [[areaSize[0]/2 + interBSDist * np.cos(a + np.pi/6),
-          areaSize[1]/2 + interBSDist * np.sin(a + np.pi/6)]
-         for a in np.linspace(0, 2*np.pi, 7)[:-1]]),
-    # np.array(
-    #     [[AREA[0]/2 + R * 3 * np.cos(a),
-    #       AREA[1]/2 + R * 3 * np.sin(a)]
-    #      for a in np.linspace(0, 2*np.pi, 13)[:-1]]),
-])
+
+
+def calculate_hex_centers(rows, cols, size=1):
+    """Calculate hexagonal grid centers."""
+    w = 0
+    h = 0
+    centers = []
+    for r in range(rows):
+        for c in range(cols):
+            x = 3/2 * c * size + 100
+            y = np.sqrt(3) * (r + 0.5 * (c % 2)) * size + 100
+            w = x if x > w else w
+            h = y if y > h else h
+            centers.append((x, y))
+    return centers, w, h
+
+
+centers, w, h = calculate_hex_centers(7, 7, size=interBSDist/np.sqrt(3))
+bsPositions = np.array(centers)
+areaSize = np.array([w+100, h+100])
+print(areaSize)
+
+# areaSize = np.array([2.5, 2.5]) * interBSDist * 4
+# bsPositions = np.vstack([
+#     [areaSize / 2],
+#     np.array(
+#         [[areaSize[0]/2 + interBSDist * np.cos(a + np.pi/6),
+#           areaSize[1]/2 + interBSDist * np.sin(a + np.pi/6)]
+#          for a in np.linspace(0, 2*np.pi, 7)[:-1]]),
+#     # np.array(
+#     #     [[AREA[0]/2 + R * 3 * np.cos(a),
+#     #       AREA[1]/2 + R * 3 * np.sin(a)]
+#     #      for a in np.linspace(0, 2*np.pi, 13)[:-1]]),
+# ])
+# mr = interBSDist * 2
+# l = mr * np.sin(np.pi/3)
+# bsPositions = np.vstack([
+#     bsPositions,
+#     np.array([[areaSize[0]/2 + mr * np.cos(a + np.pi/6), areaSize[1]/2 + mr * np.sin(a + np.pi/6)] for a in np.linspace(0, 2*np.pi, 6, endpoint=False)]),
+#     np.array([[areaSize[0]/2 + l * np.cos(a), areaSize[1]/2 + l * np.sin(a)] for a in np.linspace(0, 2*np.pi, 6, endpoint=False)])
+# ])
+# r = interBSDist * 3
+# bsPositions = np.vstack([
+#     bsPositions,
+#     np.array([[areaSize[0]/2 + r * np.cos(a + np.pi/6), areaSize[1]/2 + r * np.sin(a + np.pi/6)] for a in np.linspace(0, 2*np.pi, 6, endpoint=False)]),
+#     np.array([areaSize[0]/2 + r * np.cos(np.pi/6), areaSize[1]/2 + interBSDist * np.sin(np.pi/6)]),
+#     np.array([areaSize[0]/2 + r * np.cos(np.pi/6), areaSize[1]/2 - interBSDist * np.sin(np.pi/6)]),
+#     np.array([areaSize[0]/2 + interBSDist * np.cos(np.pi/6), areaSize[1]/2 + interBSDist * (2 + np.sin(np.pi/6))]),
+#     np.array([areaSize[0]/2 + mr * np.cos(np.pi/6), areaSize[1]/2 + interBSDist * 2]),
+#     np.array([areaSize[0]/2 - interBSDist * np.cos(np.pi/6), areaSize[1]/2 + interBSDist * (2 + np.sin(np.pi/6))]),
+#     np.array([areaSize[0]/2 - mr * np.cos(np.pi/6), areaSize[1]/2 + interBSDist * 2]),
+#     np.array([areaSize[0]/2 - r * np.cos(np.pi/6), areaSize[1]/2 + interBSDist * np.sin(np.pi/6)]),
+#     np.array([areaSize[0]/2 - r * np.cos(np.pi/6), areaSize[1]/2 - interBSDist * np.sin(np.pi/6)]),
+#     np.array([areaSize[0]/2 - interBSDist * np.cos(np.pi/6), areaSize[1]/2 - interBSDist * (2 + np.sin(np.pi/6))]),
+#     np.array([areaSize[0]/2 - mr * np.cos(np.pi/6), areaSize[1]/2 - interBSDist * 2]),
+#     np.array([areaSize[0]/2 + interBSDist * np.cos(np.pi/6), areaSize[1]/2 - interBSDist * (2 + np.sin(np.pi/6))]),
+#     np.array([areaSize[0]/2 + mr * np.cos(np.pi/6), areaSize[1]/2 - interBSDist * 2])
+# ])
+# outr = interBSDist * 4
+# bsPositions = np.vstack([
+#     bsPositions,
+#     np.array([[areaSize[0]/2 + outr * np.cos(a + np.pi/6), areaSize[1]/2 + outr * np.sin(a + np.pi/6)] for a in np.linspace(0, 2*np.pi, 6, endpoint=False)]),
+#     np.array([areaSize[0]/2 + outr * np.cos(np.pi/6), areaSize[1]/2]),
+#     np.array([areaSize[0]/2 + outr * np.cos(np.pi/6), areaSize[1]/2 + interBSDist]),
+#     np.array([areaSize[0]/2 + outr * np.cos(np.pi/6), areaSize[1]/2 - interBSDist]),
+#     np.array([areaSize[0]/2 + interBSDist * np.cos(np.pi/6), areaSize[1]/2 + interBSDist * (3 + np.sin(np.pi/6))]),
+#     np.array([areaSize[0]/2 + mr * np.cos(np.pi/6), areaSize[1]/2 + interBSDist * 3]),
+#     np.array([areaSize[0]/2 + r * np.cos(np.pi/6), areaSize[1]/2 + interBSDist * (2 + np.sin(np.pi/6))]),
+#     np.array([areaSize[0]/2 - interBSDist * np.cos(np.pi/6), areaSize[1]/2 + interBSDist * (3 + np.sin(np.pi/6))]),
+#     np.array([areaSize[0]/2 - mr * np.cos(np.pi/6), areaSize[1]/2 + interBSDist * 3]),
+#     np.array([areaSize[0]/2 - r * np.cos(np.pi/6), areaSize[1]/2 + interBSDist * (2 + np.sin(np.pi/6))]),
+#     np.array([areaSize[0]/2 - outr * np.cos(np.pi/6), areaSize[1]/2]),
+#     np.array([areaSize[0]/2 - outr * np.cos(np.pi/6), areaSize[1]/2 + interBSDist]),
+#     np.array([areaSize[0]/2 - outr * np.cos(np.pi/6), areaSize[1]/2 - interBSDist]),
+#     np.array([areaSize[0]/2 - interBSDist * np.cos(np.pi/6), areaSize[1]/2 - interBSDist * (3 + np.sin(np.pi/6))]),
+#     np.array([areaSize[0]/2 - mr * np.cos(np.pi/6), areaSize[1]/2 - interBSDist * 3]),
+#     np.array([areaSize[0]/2 - r * np.cos(np.pi/6), areaSize[1]/2 - interBSDist * (2 + np.sin(np.pi/6))]),
+#     np.array([areaSize[0]/2 + interBSDist * np.cos(np.pi/6), areaSize[1]/2 - interBSDist * (3 + np.sin(np.pi/6))]),
+#     np.array([areaSize[0]/2 + mr * np.cos(np.pi/6), areaSize[1]/2 - interBSDist * 3]),
+#     np.array([areaSize[0]/2 + r * np.cos(np.pi/6), areaSize[1]/2 - interBSDist * (2 + np.sin(np.pi/6))]),
+# ])
 probeGridSize = 20
 
 # obs names
@@ -61,5 +130,5 @@ private_obs_keys = ['next_sleep_mode', 'wakeup_time',
                     *[f'{k}{i}' for i in range(-bufferNumChunks, 0) for k in hist_stats_keys],
                     *[f'{u}_{k}' for u in ue_groups for k in ue_stats_keys]]
 mutual_obs_keys = ['dist', *ue_stats_keys]
-other_obs_keys = [f'nb{i}_{k}' for i in range(numBS - 1) for k in public_obs_keys + mutual_obs_keys]
+other_obs_keys = [f'nb{i}_{k}' for i in range(6) for k in public_obs_keys + mutual_obs_keys]
 all_obs_keys = public_obs_keys + private_obs_keys + other_obs_keys

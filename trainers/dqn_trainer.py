@@ -80,7 +80,7 @@ class DQNTrainer(BaseTrainer):
 
         envs = self.envs
         args = self.all_args
-        writer = self.writer
+        # writer = self.writer
         
         episodes = 0
         obs, _, _ = envs.reset()
@@ -124,11 +124,11 @@ class DQNTrainer(BaseTrainer):
                     old_val = self.q_net.gather(data.observations, data.actions)
                     loss = F.mse_loss(td_target, old_val)
 
-                    if steps % 1000 == 0:
-                        writer.add_scalar("losses/td_loss", loss, steps)
-                        writer.add_scalar("losses/q_values", old_val.mean().item(), steps)
-                        writer.add_scalar("charts/SPS", int(steps / (time.time() - start_time)), steps)
-                        pbar.set_postfix(SPS=int(steps / (time.time() - start_time)), td_loss=loss.item())
+                    # if steps % 1000 == 0:
+                    #     writer.add_scalar("losses/td_loss", loss, steps)
+                    #     writer.add_scalar("losses/q_values", old_val.mean().item(), steps)
+                    #     writer.add_scalar("charts/SPS", int(steps / (time.time() - start_time)), steps)
+                    #     pbar.set_postfix(SPS=int(steps / (time.time() - start_time)), td_loss=loss.item())
 
                     # optimize the model
                     optimizer.zero_grad()

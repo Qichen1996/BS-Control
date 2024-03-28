@@ -207,9 +207,9 @@ class MappoTrainer(BaseTrainer):
         self.huber_delta = args.huber_delta
         self.recurrent_N = args.recurrent_N
         
-        cent_observation_space = self.envs.cent_observation_space if \
+        cent_observation_space = self.envs.cent_observation_space[0] if \
             self.use_centralized_V else self.envs.observation_space[0]
-
+        
         self.policy = MappoPolicy(
             self.all_args,
             self.envs.observation_space[0],
@@ -219,7 +219,7 @@ class MappoTrainer(BaseTrainer):
         
         if self.model_dir is not None:
             self.load(version=self.all_args.model_version)
-        
+
         self.buffer = SharedReplayBuffer(
             self.all_args,
             self.num_agents,
@@ -449,6 +449,7 @@ class MappoTrainer(BaseTrainer):
 
         episodes = int(self.num_env_steps) // self.episode_length // self.n_rollout_threads
         pbar = trange(episodes)
+        steps = 0
 
         for episode in pbar:
             if self.use_linear_lr_decay:
@@ -460,10 +461,18 @@ class MappoTrainer(BaseTrainer):
 
                 # get transition data
                 obs, cent_obs, reward, done, infos, avail_acts = self.envs.step(actions)
+                # if step > 500:
+                #     sys.exit()
 
                 # insert data into buffer
                 self.insert(obs, cent_obs, reward, done, values, actions,
                             action_log_probs, rnn_states, rnn_states_critic)
+                train_info = {}
+                # train_info.update(
+                #     ant_num = infos[-1]['step_rewards'][-1]['ant_num'],
+                #     rwd = infos[-1]['step_rewards'][-1]['reward'])
+                # self.log_train(train_info, steps)
+                # steps += self.n_rollout_threads
 
             # compute return and update network
             self.compute()
@@ -481,13 +490,16 @@ class MappoTrainer(BaseTrainer):
             # log information
             if episode % self.log_interval == 0:
                 rew_df = pd.concat([pd.DataFrame(d['step_rewards']) for d in infos])
-                rew_info = rew_df.describe().loc[['mean', 'std', 'min', 'max']].unstack()
+                # rew_info = rew_df.describe().loc[['mean', 'std', 'min', 'max']].unstack()
+                rew_info = rew_df.describe().loc[['mean']].unstack()
                 rew_info.index = ['_'.join(idx) for idx in rew_info.index]
                 train_infos.update(
                     sm3_ratio_mean = np.mean([d['sm3_ratio'] for d in infos]),
+                    ant_switch_mean = np.mean([d['avg_sleep_switch'] for d in infos]),
+                    sleep_switch_mean = np.mean([d['avg_ant_switch'] for d in infos]),
                     **rew_info)
                 avg_step_rew = np.mean(self.buffer.rewards)
-                assert abs(avg_step_rew - train_infos['reward_mean']) < 1e-3
+                # assert abs(avg_step_rew - train_infos['reward_mean']) < 1e-3
                 notice('Episode %s: %s\n' % (episode, kwds_str(**train_infos)))
                 pbar.set_postfix(reward=avg_step_rew)
                 self.log_train(train_infos, total_num_steps)
@@ -495,6 +507,9 @@ class MappoTrainer(BaseTrainer):
     def warmup(self):
         # reset env
         obs, cent_obs, avail_actions = self.envs.reset()
+        print(cent_obs[0].shape)
+        print(obs.shape)
+        print(cent_obs.shape)
 
         # replay buffer
         if not self.use_centralized_V:

@@ -6,10 +6,10 @@ export DEBUG=0
 export TRAIN=1
 export EVAL=0
 
-scenario="RANDOM"
+scenario="B"
 accelerate=1200  # 1 step = 0.02 * 1200 = 24 s
-n_training_threads=4
-n_rollout_threads=42
+n_training_threads=24
+n_rollout_threads=24
 num_env_steps=$((25200 * 60))  # steps_per_episode * episodes
 experiment="check"
 
@@ -22,12 +22,12 @@ value_loss_coef=1
 ppo_epoch=10
 num_mini_batch=1
 
-w_qos=4
+w_qos=12
 w_xqos=0.005
 
 log_interval=1
 
-wandb_user="YOUR_WANDB_USER_NAME"
+wandb_user="qichenw"
 wandb_api_key="YOUR_WANDB_API_KEY"
 
 echo "algo is ${algo}, traffic scenario is ${scenario}, max seed is ${seed_max}"

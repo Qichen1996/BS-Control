@@ -16,6 +16,8 @@ render_interval = 4
 model_params = dict(w_qos=4, no_interf=False, max_sleep=3, no_offload=False)
 
 parser = get_config()
+parser.add_argument("-A", '--agent', type=str, default='mappo',
+                    help='type of agent used in simulation')
 parser.add_argument("--perf_save_path", default="results/performance.csv",
                     help="path to save the performance of the simulation")
 parser.add_argument("--render_interval", type=int, default=render_interval,
@@ -39,7 +41,7 @@ except:
     args = parser.parse_args([])
     env_args = env_parser.parse_args([])
     
-AGENT = args.algorithm_name
+AGENT = args.agent
 
 if args.experiment_name == 'test': args.use_wandb = False
 args.num_env_steps = args.days * 24 * 3600 * 50 // env_args.accelerate
@@ -89,7 +91,7 @@ def get_model_dir(args, env_args, run_dir, version=''):
 env = make_env(env_args, seed=args.seed)
 
 obs_space = env.observation_space[0]
-cent_obs_space = env.cent_observation_space
+cent_obs_space = env.cent_observation_space[0]
 action_space = env.action_space[0]
 
 run_dir = get_run_dir(args, env_args)
@@ -175,6 +177,7 @@ def simulate():
     # info['w_pc'] = env.w_pc
     info['w_qos'] = env.w_qos
     info['w_xqos'] = env.w_xqos
+    info['wait_time'] = env.net.wait_time
     print(info)
     
     save_path = args.perf_save_path
