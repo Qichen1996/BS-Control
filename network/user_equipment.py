@@ -37,6 +37,7 @@ class UserEquipment:
         self.serve_bss = dict()
         self.con_bss = dict()
         self.wait_time = 0
+        self.idle_time = 0
 
     # define boolean properties for each UE status
     for status in UEStatus._member_names_:
@@ -252,17 +253,11 @@ class UserEquipment:
         # DEBUG and debug(f'<< {self}')
         self.delay += dt
         if not self.bs:
+            self.idle_time += dt
+        elif int(self.status) == 1:
             self.wait_time += dt
         if EVAL and self.active:
             self.t_served += dt
-        # if self.pos[0] == 499.9516966962032:
-        #     print(f'cover: {self._cover_cells}, serve_bss: {self.serve_bss}, con_bss: {self.con_bss}, demand: {self.demand}, status: {self.status}')
-            # print(f'bs: {self.bs}, serve_bss: {self.serve_bss}, con_bss: {self.con_bss}, demand: {self.demand}, status: {self.status}')
-            # for bs in self.net.bss.values():
-            #     if bs.id == 0:
-            #         print(f'sleep: {bs.sleep}, next_sleep: {bs._next_sleep} conn: {bs.conn_mode}')
-            # if self.bs:        
-            #     print(f'que: {self.bs.queue}, bs_sleep: {self.bs.sleep}, bs_next_sleep: {self.bs._next_sleep}, bs_conn: {self.bs.conn_mode}')
         if self.active:
             self.demand -= self.data_rate * dt
         if self.demand <= 0 or self.delay >= self.delay_budget:

@@ -467,12 +467,15 @@ class MappoTrainer(BaseTrainer):
                 # insert data into buffer
                 self.insert(obs, cent_obs, reward, done, values, actions,
                             action_log_probs, rnn_states, rnn_states_critic)
-                train_info = {}
-                # train_info.update(
-                #     ant_num = infos[-1]['step_rewards'][-1]['ant_num'],
-                #     rwd = infos[-1]['step_rewards'][-1]['reward'])
-                # self.log_train(train_info, steps)
-                # steps += self.n_rollout_threads
+
+                if (step + 1) % 30 == 0:
+                    train_info = {}
+                    train_info.update(
+                        power_consumption_kw = np.mean(np.array([rwd['step_rewards'][-1]['pc_kw'] for rwd in infos])),
+                        drop_ratio = np.mean(np.array([rwd['step_rewards'][-1]['drop_ratio'] for rwd in infos])),
+                        delay_ratio = np.mean(np.array([rwd['step_rewards'][-1]['delay_ratio'] for rwd in infos])))
+                    self.log_train(train_info, steps)
+                steps += self.n_rollout_threads
 
             # compute return and update network
             self.compute()
@@ -497,6 +500,10 @@ class MappoTrainer(BaseTrainer):
                     sm3_ratio_mean = np.mean([d['sm3_ratio'] for d in infos]),
                     ant_switch_mean = np.mean([d['avg_sleep_switch'] for d in infos]),
                     sleep_switch_mean = np.mean([d['avg_ant_switch'] for d in infos]),
+                    cm1_ratio = np.mean([d['cm1_ratio'] for d in infos]),
+                    cm0_ratio = np.mean([d['cm0_ratio'] for d in infos]),
+                    wait_time_mean = np.mean([d['wait_time'] for d in infos]),
+                    idle_time_mean = np.mean([d['idle_time'] for d in infos]),
                     **rew_info)
                 avg_step_rew = np.mean(self.buffer.rewards)
                 # assert abs(avg_step_rew - train_infos['reward_mean']) < 1e-3

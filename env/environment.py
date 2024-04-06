@@ -154,11 +154,6 @@ class MultiCellNetEnv(MultiAgentEnv):
         for bs in self.net.bss.values():
             bs_n += bs._ue_stats[1, 0]
         ue_no_bs = self.net.ue_no_bs
-        # bs_n += 1e-6
-        # if n_drop > 0:
-        #     print(f'n_drop: {n_drop}')
-        #     print(f'bs_n: {bs_n}')
-        # assert (bs_n >= n_drop)
         # dropped = dr @ self.w_drop_cats
         # delay = dl @ self.w_delay_cats
         # reward = -(self.w_drop * dropped + self.w_pc * pc + self.w_delay * delay)
@@ -169,19 +164,9 @@ class MultiCellNetEnv(MultiAgentEnv):
             qos_reward=r_qos,
             pc_kw=pc_kw,
             reward=reward,
-            r0=bs_reward[0][0],
-            r1=bs_reward[1][0],
-            r2=bs_reward[2][0],
-            pc0=bs_pc[0][0],
-            pc1=bs_pc[1][0],
-            pc2=bs_pc[2][0],
             n_drop=n_drop,
             bs_n_drop=bs_n,
             ue_no_bs=ue_no_bs,
-            bs0_drop_ratio=bs_drop_ratio[0][0],
-            bs1_drop_ratio=bs_drop_ratio[1][0],
-            bs10_drop_ratio=bs_drop_ratio[10][0],
-            bs11_drop_ratio=bs_drop_ratio[11][0],
         )
             # num_ue=self.net.num_ue,
             # ant_num=self.net.avg_num_antennas())
@@ -268,9 +253,12 @@ class MultiCellNetEnv(MultiAgentEnv):
             if TRAIN:  # only for training logging
                 infos['step_rewards'] = self._reward_stats
                 infos['sm3_ratio'] = self.net.avg_sleep_ratios()[3]
-                infos['avg_ants'] = self.net.avg_num_antennas()
+                infos['cm1_ratio'] = self.net.avg_conn_ratios()[2]
+                infos['cm0_ratio'] = self.net.avg_conn_ratios()[1]
                 infos['avg_sleep_switch'] = self.net.avg_num_sleep_switch()
                 infos['avg_ant_switch'] = self.net.avg_num_antenna_switch()
+                infos['wait_time'] = self.net.wait_time
+                infos['idle_time'] = self.net.idle_time
 
             notice('Episode %d finished at %s', self._episode_count, self.net.world_time_repr)
         

@@ -31,7 +31,7 @@ parser.add_argument("--stochastic", action="store_true",
 
 env_parser = get_env_config()
     
-parser.set_defaults(log_level='NOTICE', group_name='RANDOM')
+parser.set_defaults(log_level='NOTICE', group_name='B')
 env_parser.set_defaults(accelerate=accelerate)
 
 try:

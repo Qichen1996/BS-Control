@@ -107,6 +107,7 @@ class BaseStation:
         self._arrival_rate = 0
         self._energy_consumed = 0
         self._sleep_time = np.zeros(self.num_sleep_modes)
+        self._conn_time = np.zeros(self.num_conn_modes)
         self.switch_sleep = 0
         self.switch_antenna = 0
         # self._energy_consumed = defaultdict(float)
@@ -228,7 +229,6 @@ class BaseStation:
         self.switch_antennas(int(action[0]))
         self.switch_sleep_mode(int(action[1]))
         self.switch_connection_mode(int(action[2]) - 1)
-        # self.switch_connection_mode(1)
     
     def switch_antennas(self, opt):
         if DEBUG:
@@ -533,6 +533,7 @@ class BaseStation:
         self.update_sleep(dt)
         self.update_connections()
         self.consume_energy(self.operation_pc * dt, 'operation')
+        self._conn_time[self.conn_mode+1] += dt
         self.update_timer(dt)
 
     @property
@@ -585,7 +586,7 @@ class BaseStation:
         num_bs = 0
         for bs in self.net.bss.values():
             if bs is self: continue
-            if self.neighbor_dist(bs.id) > 0.45: continue
+            if self.neighbor_dist(bs.id) > 0.55: continue
             pub_obs = bs.observe_self()[:bs.public_obs_dim]
             mut_obs = self.observe_mutual(bs)
             obs.append(pub_obs)

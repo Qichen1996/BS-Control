@@ -93,6 +93,7 @@ class MultiCellNetwork:
         self._arrival_buf = np.zeros((self.buffer_ws, numApps))
         self._ue_stats = np.zeros((2, 2))
         self.wait_time = 0
+        self.idle_time = 0
         self.ue_no_bs = 0
         notice('Reset %s', repr(self))
 
@@ -230,6 +231,7 @@ class MultiCellNetwork:
     def remove_user(self, ue_id):
         ue = self.ues.pop(ue_id)
         self.wait_time += ue.wait_time
+        self.idle_time += ue.idle_time
         if ue.demand > 0.:
             if not ue.serve_bss:
                 self.ue_no_bs += 1
@@ -384,6 +386,10 @@ class MultiCellNetwork:
     def avg_sleep_ratios(self):
         s = np.array([bs._sleep_time for bs in self.bss.values()]).mean(axis=0)
         return s / s.sum()
+
+    def avg_conn_ratios(self):
+        c = np.array([bs._conn_time for bs in self.bss.values()]).mean(axis=0)
+        return c / c.sum()
 
     def avg_num_antennas(self):
         return np.mean([bs.num_ant for bs in self.bss.values()])
