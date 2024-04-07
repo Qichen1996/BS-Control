@@ -1,7 +1,7 @@
 #!/bin/sh
 acc=2000
 
-for seed in 1; do
+for seed in 1 2 3; do
 for S in B; do
     for w in 12; do
         ./simulate.py -S $S --w_qos $w --seed $seed -a $acc $@
