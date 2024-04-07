@@ -91,7 +91,7 @@ def get_model_dir(args, env_args, run_dir, version=''):
 env = make_env(env_args, seed=args.seed)
 
 obs_space = env.observation_space[0]
-cent_obs_space = env.cent_observation_space[0]
+cent_obs_space = env.cent_observation_space
 action_space = env.action_space[0]
 
 run_dir = get_run_dir(args, env_args)
@@ -151,6 +151,19 @@ render_mode = args.use_render and ('dash' if args.use_dash else 'frame')
 # from hiddenlayer import build_graph
 # build_graph(agent.actor, torch.tensor(obs))
 
+# import wandb
+# import socket
+# wandb.init(
+#             config=args,
+#             project=args.env_name,
+#             entity=args.user_name,
+#             notes=socket.gethostname(),
+#             name=f"{args.algorithm_name}_{args.experiment_name}_seed{args.seed}",
+#             group=env_args.scenario,
+#             job_type="training",
+#             reinit=True,
+#         )
+
 # %%
 def simulate():
     step_rewards = []
@@ -159,10 +172,26 @@ def simulate():
     # for _ in range(warmup_steps):
     #     env.step()
     obs, _, _ = env.reset(render_mode)
+
     for i in trange(args.num_env_steps, file=sys.stdout):
         actions = agent.act(obs, deterministic=not args.stochastic)
-        obs, _, rewards, done, _, _ = env.step(
+        obs, _, rewards, done, infos, _ = env.step(
             actions, render_mode=render_mode, render_interval=render_interval)
+
+    # steps = 0
+    for i in trange(args.num_env_steps, file=sys.stdout):
+        actions = agent.act(obs, deterministic=not args.stochastic)
+        obs, _, rewards, done, infos, _ = env.step(
+            actions, render_mode=render_mode, render_interval=render_interval)
+        # train_info = {}
+        # train_info.update(
+        #     avg_antennas = infos['avg_antennas'],
+        #     pc = infos['pc'],
+        #     sm0_cnt = infos['sm0_cnt'],
+        #     sum_tx_power = infos['sum_tx_power'])
+        # for k, v in train_info.items():
+        #     wandb.log({k: v}, step=steps)
+        # steps += 1
         step_rewards.append(np.mean(rewards))
     rewards = pd.Series(np.squeeze(step_rewards), name='reward')
     
