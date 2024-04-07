@@ -177,6 +177,8 @@ def simulate():
         actions = agent.act(obs, deterministic=not args.stochastic)
         obs, _, rewards, done, infos, _ = env.step(
             actions, render_mode=render_mode, render_interval=render_interval)
+    env.net._total_stats.clear()
+    env.net._other_stats.clear()
 
     # steps = 0
     for i in trange(args.num_env_steps, file=sys.stdout):
