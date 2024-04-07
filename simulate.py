@@ -74,7 +74,7 @@ def get_model_dir(args, env_args, run_dir, version=''):
         return run_dir / args.model_dir
     p = 'wandb/run-*%s/files/' if args.use_wandb else '%s/models/'
     dirs = run_dir.glob(p % version)
-    for d in sorted(dirs, key=os.path.getmtime, reverse=True):
+    for d in sorted(dirs, key=os.path.getmtime, reverse=False):
         if env_args.no_interf ^ ('no_interf' in str(d)):
             continue
         config_path = d/'config.yaml'
@@ -151,18 +151,18 @@ render_mode = args.use_render and ('dash' if args.use_dash else 'frame')
 # from hiddenlayer import build_graph
 # build_graph(agent.actor, torch.tensor(obs))
 
-# import wandb
-# import socket
-# wandb.init(
-#             config=args,
-#             project=args.env_name,
-#             entity=args.user_name,
-#             notes=socket.gethostname(),
-#             name=f"{args.algorithm_name}_{args.experiment_name}_seed{args.seed}",
-#             group=env_args.scenario,
-#             job_type="training",
-#             reinit=True,
-#         )
+import wandb
+import socket
+wandb.init(
+            config=args,
+            project=args.env_name,
+            entity=args.user_name,
+            notes=socket.gethostname(),
+            name=f"{args.algorithm_name}_{args.experiment_name}_seed{args.seed}",
+            group=env_args.scenario,
+            job_type="training",
+            reinit=True,
+        )
 
 # %%
 def simulate():
@@ -177,22 +177,22 @@ def simulate():
         actions = agent.act(obs, deterministic=not args.stochastic)
         obs, _, rewards, done, _, _ = env.step(
             actions, render_mode=render_mode, render_interval=render_interval)
-    env._trajectory = env._trajectory[-1:]
+    env._trajectory.clear()
 
-    # steps = 0
     for i in trange(args.num_env_steps, file=sys.stdout):
         actions = agent.act(obs, deterministic=not args.stochastic)
         obs, _, rewards, done, infos, _ = env.step(
             actions, render_mode=render_mode, render_interval=render_interval)
-        # train_info = {}
-        # train_info.update(
-        #     avg_antennas = infos['avg_antennas'],
-        #     pc = infos['pc'],
-        #     sm0_cnt = infos['sm0_cnt'],
-        #     sum_tx_power = infos['sum_tx_power'])
-        # for k, v in train_info.items():
-        #     wandb.log({k: v}, step=steps)
-        # steps += 1
+        train_info = {}
+        train_info.update(
+            avg_antennas = infos['avg_antennas'],
+            pc = infos['pc'],
+            sm0_cnt = infos['sm0_cnt'],
+            sm1_cnt = infos['sm1_cnt'],
+            actual_rate = infos['actual_rate'],
+            drop_ratio = infos['drop_ratio'])
+        for k, v in train_info.items():
+            wandb.log({k: v}, step=i)
         step_rewards.append(np.mean(rewards))
     rewards = pd.Series(np.squeeze(step_rewards), name='reward')
     
