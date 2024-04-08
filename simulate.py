@@ -74,7 +74,7 @@ def get_model_dir(args, env_args, run_dir, version=''):
         return run_dir / args.model_dir
     p = 'wandb/run-*%s/files/' if args.use_wandb else '%s/models/'
     dirs = run_dir.glob(p % version)
-    for d in sorted(dirs, key=os.path.getmtime, reverse=False):
+    for d in sorted(dirs, key=os.path.getmtime, reverse=True):
         if env_args.no_interf ^ ('no_interf' in str(d)):
             continue
         config_path = d/'config.yaml'
@@ -177,7 +177,7 @@ def simulate():
         actions = agent.act(obs, deterministic=not args.stochastic)
         obs, _, rewards, done, _, _ = env.step(
             actions, render_mode=render_mode, render_interval=render_interval)
-    env._trajectory.clear()
+    env._trajectory = env._trajectory[-1:]
 
     for i in trange(args.num_env_steps, file=sys.stdout):
         actions = agent.act(obs, deterministic=not args.stochastic)
