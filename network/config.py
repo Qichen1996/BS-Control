@@ -5,7 +5,7 @@ renderMode = 'none'
 
 # base station params
 numBS = 49
-interBSDist = 400  # the distance between two adjacent BSs
+interBSDist = 500  # the distance between two adjacent BSs
 # cellRadius = 750  # the radius of a hexagon cell in meters
 txPower = 0.2  # average transmit power per antenna in watts
 maxPAPower = 3  # maximum antenna power in watts
