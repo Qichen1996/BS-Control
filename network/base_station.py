@@ -514,7 +514,7 @@ class BaseStation:
         P = Pld + Pnl
         if EVAL:
             rec = dict(bs=self.id, M=M, m=m, K=K, R=R, S=S, Pnl=Pnl, Pld=Pld, P=P)
-            self.net.add_stat('pc', rec)
+            # self.net.add_stat('pc', rec)
             debug(f'BS {self.id}: {kwds_str(**rec)}')
         return P
     
