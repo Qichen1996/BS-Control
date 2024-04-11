@@ -74,26 +74,26 @@ def get_model_dir(args, env_args, run_dir, version=''):
         return run_dir / args.model_dir
     p = 'wandb/run-*%s/files/' if args.use_wandb else '%s/models/'
     dirs = run_dir.glob(p % version)
-    # for d in sorted(dirs, key=os.path.getmtime, reverse=True):
-    d = sorted(dirs, key=os.path.getmtime, reverse=True)[0]
-    print(d)
-    # if env_args.no_interf ^ ('no_interf' in str(d)):
-    #     continue
-    config_path = d/'config.yaml'
-    if not config_path.exists():
-        warn("no config file in %s" % d)
-        return d
-    with open(config_path) as f:
-        cfg = yaml.safe_load(f)
-        if all(getattr(env_args, k) == cfg[k]['value']
-               for k in model_params if k in cfg):
+    for d in sorted(dirs, key=os.path.getmtime, reverse=True):
+    # d = sorted(dirs, key=os.path.getmtime, reverse=True)[0]
+    # print(d)
+        if env_args.no_interf ^ ('no_interf' in str(d)):
+            continue
+        config_path = d/'config.yaml'
+        if not config_path.exists():
+            warn("no config file in %s" % d)
             return d
+        with open(config_path) as f:
+            cfg = yaml.safe_load(f)
+            if all(getattr(env_args, k) == cfg[k]['value']
+                   for k in model_params if k in cfg):
+                return d
     raise FileNotFoundError("no such model directory")
 
 env = make_env(env_args, seed=args.seed)
 
 obs_space = env.observation_space[0]
-cent_obs_space = env.cent_observation_space[0]
+cent_obs_space = env.cent_observation_space
 action_space = env.action_space[0]
 
 run_dir = get_run_dir(args, env_args)
@@ -175,11 +175,11 @@ def simulate():
     #     env.step()
     obs, _, _ = env.reset(render_mode)
 
-    for i in trange(args.num_env_steps, file=sys.stdout):
-        actions = agent.act(obs, deterministic=not args.stochastic)
-        obs, _, rewards, done, _, _ = env.step(
-            actions, render_mode=render_mode, render_interval=render_interval)
-    env._trajectory = env._trajectory[-1:]
+    # for i in trange(args.num_env_steps, file=sys.stdout):
+    #     actions = agent.act(obs, deterministic=not args.stochastic)
+    #     obs, _, rewards, done, _, _ = env.step(
+    #         actions, render_mode=render_mode, render_interval=render_interval)
+    # env._trajectory = env._trajectory[-1:]
 
     for i in trange(args.num_env_steps, file=sys.stdout):
         actions = agent.act(obs, deterministic=not args.stochastic)

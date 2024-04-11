@@ -81,8 +81,8 @@ class MultiCellNetEnv(MultiAgentEnv):
         self.observation_space = [self.net.bs_obs_space
                                   for _ in range(self.num_agents)]
         self.cent_observation_space = self.net.net_obs_space
-        self.cent_observation_space = [self.net.net_obs_space
-                                       for _ in range(self.num_agents)]
+        # self.cent_observation_space = [self.net.net_obs_space
+        #                                for _ in range(self.num_agents)]
         
         self.action_space = [MultiDiscrete(BaseStation.action_dims)
                              for _ in range(self.num_agents)]
@@ -123,7 +123,7 @@ class MultiCellNetEnv(MultiAgentEnv):
         notice('Observation space: {}'.format(
             (self.num_agents, *self.observation_space[0].shape)))
         notice('Central observation space: {}'.format(
-            self.cent_observation_space[0].shape))
+            self.cent_observation_space.shape))
         notice('Action space: {}'.format(
             (self.num_agents, self.action_space[0].shape)))
         notice('Seed: {}'.format(self._seed))
@@ -150,9 +150,6 @@ class MultiCellNetEnv(MultiAgentEnv):
         bs_reward = [self.net.get_bs_reward(i) for i in range(self.num_agents)]
         bs_pc = [self.net.get_bs_pc(i) for i in range(self.num_agents)]
         bs_drop_ratio = [self.net.get_drop_ratio(i) for i in range(self.num_agents)]
-        bs_n = 0
-        for bs in self.net.bss.values():
-            bs_n += bs._ue_stats[1, 0]
         ue_no_bs = self.net.ue_no_bs
         # dropped = dr @ self.w_drop_cats
         # delay = dl @ self.w_delay_cats
@@ -164,8 +161,6 @@ class MultiCellNetEnv(MultiAgentEnv):
             qos_reward=r_qos,
             pc_kw=pc_kw,
             reward=reward,
-            n_drop=n_drop,
-            bs_n_drop=bs_n,
             ue_no_bs=ue_no_bs,
         )
             # num_ue=self.net.num_ue,
@@ -175,7 +170,7 @@ class MultiCellNetEnv(MultiAgentEnv):
             # r_info['drop_ratios'] = dr
             # r_info['ue_delays'] = dl
         self._reward_stats.append(r_info)
-        return bs_reward
+        return reward
 
     def get_obs_agent(self, agent_id):
         return self.net.observe_bs(agent_id)
@@ -183,11 +178,11 @@ class MultiCellNetEnv(MultiAgentEnv):
     def get_centobs_agent(self, agent_id):
         return self.net.observe_bs_network(agent_id)
 
-    def get_cent_obs(self):
-        return [self.get_centobs_agent(i) for i in range(self.num_agents)]
-
     # def get_cent_obs(self):
-    #     return [self.net.observe_network()]
+    #     return [self.get_centobs_agent(i) for i in range(self.num_agents)]
+
+    def get_cent_obs(self):
+        return [self.net.observe_network()]
     
     def reset(self, render_mode=None):
         # self.seed()
@@ -233,7 +228,7 @@ class MultiCellNetEnv(MultiAgentEnv):
         cent_obs = self.get_cent_obs()
         rewards = self.get_reward(cent_obs[0])
 
-        # rewards = [[rewards]]  # shared reward for all agents
+        rewards = [[rewards]]  # shared reward for all agents
 
         done = self._episode_steps >= self.episode_len
         infos = {}

@@ -27,9 +27,9 @@ class MultiCellNetwork:
     net_obs_space = concat_box_envs(
         global_obs_space,
         duplicate_box_env(bs_obs_space, config.numBS))
-    net_obs_space = concat_box_envs(
-        up_obs_space,
-        bs_obs_space)
+    # net_obs_space = concat_box_envs(
+    #     up_obs_space,
+    #     bs_obs_space)
     # net_obs_space = global_obs_space
 
 
@@ -120,7 +120,7 @@ class MultiCellNetwork:
 
     @timeit
     def step(self, dt):
-        for _ in range(10):
+        for _ in range(5):
             self.generate_new_ues(dt)
     
         self.scan_connections()
