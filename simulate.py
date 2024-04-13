@@ -74,7 +74,7 @@ def get_model_dir(args, env_args, run_dir, version=''):
         return run_dir / args.model_dir
     p = 'wandb/run-*%s/files/' if args.use_wandb else '%s/models/'
     dirs = run_dir.glob(p % version)
-    for d in sorted(dirs, key=os.path.getmtime, reverse=True):
+    for d in sorted(dirs, key=os.path.getmtime, reverse=False):
     # d = sorted(dirs, key=os.path.getmtime, reverse=True)[0]
     # print(d)
         if env_args.no_interf ^ ('no_interf' in str(d)):
