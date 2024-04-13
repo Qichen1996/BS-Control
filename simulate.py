@@ -175,11 +175,11 @@ def simulate():
     #     env.step()
     obs, _, _ = env.reset(render_mode)
 
-    # for i in trange(args.num_env_steps, file=sys.stdout):
-    #     actions = agent.act(obs, deterministic=not args.stochastic)
-    #     obs, _, rewards, done, _, _ = env.step(
-    #         actions, render_mode=render_mode, render_interval=render_interval)
-    # env._trajectory = env._trajectory[-1:]
+    for i in trange(args.num_env_steps, file=sys.stdout):
+        actions = agent.act(obs, deterministic=not args.stochastic)
+        obs, _, rewards, done, _, _ = env.step(
+            actions, render_mode=render_mode, render_interval=render_interval)
+    env._trajectory = env._trajectory[-1:]
 
     for i in trange(args.num_env_steps, file=sys.stdout):
         actions = agent.act(obs, deterministic=not args.stochastic)
