@@ -534,6 +534,7 @@ class BaseStation:
         self.update_connections()
         self.consume_energy(self.operation_pc * dt, 'operation')
         self._conn_time[self.conn_mode+1] += dt
+        self.net.operation_pc += self.operation_pc * dt
         self.update_timer(dt)
 
     @property
@@ -566,7 +567,7 @@ class BaseStation:
         q_drop = self.drop_ratio
         n = n_done + n_drop + 1e-6
         r_qos = (-n_drop * q_drop + w_xqos * n_done * (1 - q_del)) / n
-        reward = w_qos * r_qos - pc_kw
+        reward = w_qos * r_qos - pc_kw * 2
         return reward
         
     # @timeit

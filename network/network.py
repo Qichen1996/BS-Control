@@ -46,7 +46,7 @@ class MultiCellNetwork:
                  start_time=0,
                  accelerate=1,
                  max_sleep_depth=3,
-                 w_qos=4,
+                 w_qos=16,
                  w_xqos=0.005,
                  has_interference=True,
                  allow_offload=True,
@@ -95,6 +95,7 @@ class MultiCellNetwork:
         self.wait_time = 0
         self.idle_time = 0
         self.ue_no_bs = 0
+        self.operation_pc = 0
         notice('Reset %s', repr(self))
 
     def reset_stats(self):
@@ -105,6 +106,7 @@ class MultiCellNetwork:
         self._arrival_buf[self._buf_idx] = 0
         self._ue_stats[:] = 0
         self.ue_no_bs = 0
+        self.operation_pc = 0
         if EVAL:
             self._stats_updated = False
 
@@ -120,7 +122,7 @@ class MultiCellNetwork:
 
     @timeit
     def step(self, dt):
-        for _ in range(10):
+        for _ in range(20):
             self.generate_new_ues(dt)
     
         self.scan_connections()

@@ -74,9 +74,9 @@ def get_model_dir(args, env_args, run_dir, version=''):
         return run_dir / args.model_dir
     p = 'wandb/run-*%s/files/' if args.use_wandb else '%s/models/'
     dirs = run_dir.glob(p % version)
-    for d in sorted(dirs, key=os.path.getmtime, reverse=False):
+    for d in sorted(dirs, key=os.path.getmtime, reverse=True):
     # d = sorted(dirs, key=os.path.getmtime, reverse=True)[0]
-    # print(d)
+        print(d)
         if env_args.no_interf ^ ('no_interf' in str(d)):
             continue
         config_path = d/'config.yaml'
@@ -175,11 +175,11 @@ def simulate():
     #     env.step()
     obs, _, _ = env.reset(render_mode)
 
-    for i in trange(args.num_env_steps, file=sys.stdout):
-        actions = agent.act(obs, deterministic=not args.stochastic)
-        obs, _, rewards, done, _, _ = env.step(
-            actions, render_mode=render_mode, render_interval=render_interval)
-    env._trajectory = env._trajectory[-1:]
+    # for i in trange(args.num_env_steps, file=sys.stdout):
+    #     actions = agent.act(obs, deterministic=not args.stochastic)
+    #     obs, _, rewards, done, _, _ = env.step(
+    #         actions, render_mode=render_mode, render_interval=render_interval)
+    # env._trajectory = env._trajectory[-1:]
 
     for i in trange(args.num_env_steps, file=sys.stdout):
         actions = agent.act(obs, deterministic=not args.stochastic)
@@ -190,9 +190,16 @@ def simulate():
         #     avg_antennas = infos['avg_antennas'],
         #     pc = infos['pc'],
         #     sm0_cnt = infos['sm0_cnt'],
-        #     sm1_cnt = infos['sm1_cnt'],
-        #     actual_rate = infos['actual_rate'],
-        #     drop_ratio = infos['drop_ratio'])
+        #     b1_pc = infos['b1_pc'],
+        #     b1_ant = infos['b1_ant'],
+        #     b1_sleep = infos['b1_sleep'],
+        #     b1_ue = infos['b1_ue'],
+        #     b1_reward = infos['b1_rwd'],
+        #     b1_cover_ue = infos['b1_cover_ue'])
+        #     # sm1_cnt = infos['sm1_cnt'],
+        #     # op_pc = infos['operation_pc'],
+        #     # actual_rate = infos['actual_rate'],
+        #     # drop_ratio = infos['drop_ratio'])
         # for k, v in train_info.items():
         #     wandb.log({k: v}, step=i)
         step_rewards.append(np.mean(rewards))

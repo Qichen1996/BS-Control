@@ -262,9 +262,22 @@ class MultiCellNetEnv(MultiAgentEnv):
     
     def info_dict(self):
         info = self.net.info_dict(include_bs=self.include_bs_info)
+        bs_pc = [self.net.bss[i].get_pc for i in range(self.num_agents)]
+        bs_ant = [self.net.bss[i].num_ant for i in range(self.num_agents)]
+        bs_sleep = [self.net.bss[i].sleep for i in range(self.num_agents)]
+        bs_cover_ue = [len(self.net.bss[i].covered_ues) for i in range(self.num_agents)]
+        bs_ue = [len(self.net.bss[i].ues) for i in range(self.num_agents)]
+        bs_reward = [self.net.get_bs_reward(i) for i in range(self.num_agents)]
         info.update(
             reward = self._sim_steps and self._reward_stats[-1]['reward'],
             pc_kw = self._sim_steps and self._reward_stats[-1]['pc_kw'],
+            operation_pc = self._sim_steps and self.net.operation_pc,
+            b1_pc = self._sim_steps and bs_pc[0],
+            b1_ant = self._sim_steps and bs_ant[0],
+            b1_sleep = self._sim_steps and bs_sleep[0],
+            b1_cover_ue = self._sim_steps and bs_cover_ue[0],
+            b1_ue = self._sim_steps and bs_ue[0],
+            b1_rwd = self._sim_steps and bs_reward[0][0],
             qos_reward = self._sim_steps and self._reward_stats[-1]['qos_reward'] * self.w_qos,
             drop_ratio = self._sim_steps and self._reward_stats[-1]['drop_ratio'],
         )
