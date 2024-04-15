@@ -512,7 +512,6 @@ class MappoTrainer(BaseTrainer):
     def warmup(self):
         # reset env
         obs, cent_obs, avail_actions = self.envs.reset()
-        print(cent_obs[0].shape)
         print(obs.shape)
         print(cent_obs.shape)
 

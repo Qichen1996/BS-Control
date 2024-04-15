@@ -6,10 +6,10 @@ for S in B; do
     for w in 20; do
         ./simulate.py -S $S --w_qos $w --seed $seed -a $acc $@
     done
-    w=12
+    # w=12
     ./simulate.py -S $S -A fixed --seed $seed -a $acc $@
     # ./simulate.py -S $S -A simple1 --seed $seed -a $acc $@
-    # ./simulate.py -S $S -A simple1 --no_offload --seed $seed -a $acc $@
+    ./simulate.py -S $S -A simple1 --no_offload --seed $seed -a $acc $@
     # for max_s in 1; do  # max depth of sleep
     #     ./simulate.py -S $S --w_qos $w --seed $seed -a $acc --max_sleep $max_s $@
     # done
