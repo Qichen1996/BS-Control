@@ -567,7 +567,7 @@ class BaseStation:
         q_drop = self.drop_ratio
         n = n_done + n_drop + 1e-6
         r_qos = (-n_drop * q_drop + w_xqos * n_done * (1 - q_del)) / n
-        reward = w_qos * r_qos - pc_kw * 2
+        reward = w_qos * r_qos - pc_kw * 5
         return reward
         
     # @timeit

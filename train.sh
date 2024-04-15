@@ -22,7 +22,7 @@ value_loss_coef=1
 ppo_epoch=10
 num_mini_batch=1
 
-w_qos=12
+w_qos=20
 w_xqos=0.005
 
 log_interval=1
