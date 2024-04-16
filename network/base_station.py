@@ -81,6 +81,7 @@ class BaseStation:
         self.ues: Dict[int, UserEquipment] = dict()
         self.queue = deque()
         self.covered_ues = set()
+        self.max_covered_ues = set()
         self._has_interf = has_interference
         self._offload = allow_offload
         self._max_sleep = max_sleep_depth
@@ -344,14 +345,22 @@ class BaseStation:
             self._total_stats['num_rejects'] += 1
 
     def add_to_cell(self, ue):
+        self.max_covered_ues.add(ue)
         self.covered_ues.add(ue)
         self._arrival_rate += ue.required_rate
 
+    def add_to_max_cell(self, ue):
+        self.max_covered_ues.add(ue)
+
     def remove_from_cell(self, ue):
         self.covered_ues.remove(ue)
+        self.max_covered_ues.remove(ue)
         if EVAL:
             self._total_stats['cell_traffic'] += ue.total_demand
             self._total_stats['cell_dropped_traffic'] += max(0, ue.demand)
+
+    def remove_from_max_cell(self, ue):
+        self.max_covered_ues.remove(ue)
 
     # def takeover_all(self):
     #     if self.covered_ues and DEBUG:
@@ -550,14 +559,6 @@ class BaseStation:
     def delay_ratio(self):
         """ Average delay/budget for each app category in the current step. """
         return div0(self._ue_stats[0, 1], self._ue_stats[0, 0])
-
-    @property
-    def ue_info(self):
-        thrps = np.zeros(3 + 1)
-        for ue in self.ues.values():
-            thrps[ue.status] += ue.required_rate
-            thrps[-1] += ue.data_rate
-        return thrps
     
     def get_reward(self, w_qos, w_xqos):
         pc_kw = self.power_consumption * 1e-3

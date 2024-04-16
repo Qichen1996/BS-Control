@@ -47,8 +47,8 @@ def calculate_hex_centers(rows, cols, size=1):
     centers = []
     for r in range(rows):
         for c in range(cols):
-            x = 3/2 * c * size + 100
-            y = np.sqrt(3) * (r + 0.5 * (c % 2)) * size + 100
+            x = 3/2 * c * size + 300
+            y = np.sqrt(3) * (r + 0.5 * (c % 2)) * size + 300
             w = x if x > w else w
             h = y if y > h else h
             centers.append((x, y))
@@ -57,7 +57,7 @@ def calculate_hex_centers(rows, cols, size=1):
 
 centers, w, h = calculate_hex_centers(5, 5, size=interBSDist/np.sqrt(3))
 bsPositions = np.array(centers)
-areaSize = np.array([w+100, h+100])
+areaSize = np.array([w+300, h+300])
 print(areaSize)
 
 # areaSize = np.array([2.5, 2.5]) * interBSDist * 4

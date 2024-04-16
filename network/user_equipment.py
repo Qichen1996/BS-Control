@@ -33,6 +33,7 @@ class UserEquipment:
         self._gains = None
         self._thruput = None
         self._cover_cells = []
+        self.penalty = False
         self._sinr_stats = Counter()
         self.serve_bss = dict()
         self.con_bss = dict()
@@ -82,11 +83,18 @@ class UserEquipment:
             if p > self.signal_thresh:
                 bs.add_to_cell(self)
                 q.append((p / (K + 1), i))
-        if not q:
-            sorted_gains = sorted(enumerate(gains), key=lambda x: x[1], reverse=True)
-            for i in sorted_gains[:1]:
-                self.net.bss[i[0]].add_to_cell(self)
-                q.append((0, i[0]))
+        if not q and TRAIN:
+            # sorted_gains = sorted(enumerate(gains), key=lambda x: x[1], reverse=True)
+            # for i in sorted_gains[:1]:
+            #     self.net.bss[i[0]].add_to_cell(self)
+            #     q.append((0, i[0]))
+            for i, bs in self.net.bss.items():
+                M, p = bs.max_antennas, bs.tx_power
+                p = gains[i] * M * (M - 0) * p
+                if p > self.signal_thresh:
+                    self.penalty = True
+                    bs.add_to_max_cell(self)
+                    q.append((p / (K + 1), i))
         self._cover_cells = [it[1] for it in sorted(q, reverse=True)]
         return gains
 
@@ -223,7 +231,10 @@ class UserEquipment:
                 # bs = self.net.get_bs(bs_id)
                 bs._ue_stats[0] += [1, self.delay / self.delay_budget]
         for i in self._cover_cells:
-            self.net.get_bs(i).remove_from_cell(self)
+            if self.penalty:
+                self.net.get_bs(i).remove_from_max_cell(self)               
+            else:
+                self.net.get_bs(i).remove_from_cell(self)
         if self.demand <= 0.:
             self.demand = 0.
             self.status = UEStatus.DONE

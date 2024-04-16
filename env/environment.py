@@ -161,6 +161,12 @@ class MultiCellNetEnv(MultiAgentEnv):
             qos_reward=r_qos,
             pc_kw=pc_kw,
             reward=reward,
+            b0_drop_ratio=bs_drop_ratio[0][0],
+            b0_pc=bs_pc[0][0],
+            b0_qos_rwd=(bs_reward[0][0]+bs_pc[0][0])/self.w_xqos,
+            b1_drop_ratio=bs_drop_ratio[1][0],
+            b1_pc=bs_pc[1][0],
+            b1_qos_rwd=(bs_reward[1][0]+bs_pc[1][0])/self.w_xqos,
             n_drop=n_drop,
             ue_no_bs=ue_no_bs,
         )
@@ -248,7 +254,7 @@ class MultiCellNetEnv(MultiAgentEnv):
             self._episode_count += 1
             if TRAIN:  # only for training logging
                 infos['step_rewards'] = self._reward_stats
-                infos['sm3_ratio'] = self.net.avg_sleep_ratios()[3]
+                infos['sm1_ratio'] = self.net.avg_sleep_ratios()[1]
                 infos['cm1_ratio'] = self.net.avg_conn_ratios()[2]
                 infos['cm0_ratio'] = self.net.avg_conn_ratios()[1]
                 infos['avg_sleep_switch'] = self.net.avg_num_sleep_switch()
@@ -265,7 +271,6 @@ class MultiCellNetEnv(MultiAgentEnv):
         bs_pc = [self.net.bss[i].get_pc for i in range(self.num_agents)]
         bs_ant = [self.net.bss[i].num_ant for i in range(self.num_agents)]
         bs_sleep = [self.net.bss[i].sleep for i in range(self.num_agents)]
-        bs_cover_ue = [len(self.net.bss[i].covered_ues) for i in range(self.num_agents)]
         bs_ue = [len(self.net.bss[i].ues) for i in range(self.num_agents)]
         bs_reward = [self.net.get_bs_reward(i) for i in range(self.num_agents)]
         info.update(
@@ -275,7 +280,6 @@ class MultiCellNetEnv(MultiAgentEnv):
             b1_pc = self._sim_steps and bs_pc[1],
             b1_ant = self._sim_steps and bs_ant[1],
             b1_sleep = self._sim_steps and bs_sleep[1],
-            b1_cover_ue = self._sim_steps and bs_cover_ue[1],
             b1_ue = self._sim_steps and bs_ue[1],
             b1_rwd = self._sim_steps and bs_reward[1][0],
             qos_reward = self._sim_steps and self._reward_stats[-1]['qos_reward'] * self.w_qos,

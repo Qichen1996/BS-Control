@@ -122,7 +122,7 @@ class MultiCellNetwork:
 
     @timeit
     def step(self, dt):
-        for _ in range(1):
+        for _ in range(5):
             self.generate_new_ues(dt)
     
         self.scan_connections()
@@ -248,7 +248,7 @@ class MultiCellNetwork:
     @timeit
     def scan_connections(self):
         for ue in self.ues.values():
-            if ue.idle:
+            if ue.idle and not ue.penalty:
                 ue.request_connection()
 
     @timeit
@@ -293,26 +293,21 @@ class MultiCellNetwork:
     
     @cache_obs
     def observe_bs_network(self, bs_id):
-        # bs = self.bss[bs_id]
         bs_obs = np.array(self.observe_bs(bs_id))
-        # bs_obs = [self.observe_bs(i) for i in range(self.num_bs)]
-        # bs_obs = np.concatenate(bs_obs, dtype=np.float32)
-        # bs_id = np.array([bs_id])
-        # thrps = np.zeros(3 + 1)
-        # for ue in self.ues.values():
-        #     thrps[ue.status] += ue.required_rate
-        #     thrps[-1] += ue.data_rate
-        thrps = self.bss[bs_id].ue_info
+        bs = self.bss[bs_id]
+        thrps = np.zeros(3 + 1)
+        for ue in bs.max_covered_ues:
+            thrps[ue.status] += ue.required_rate
+            thrps[-1] += ue.data_rate
         return np.concatenate([
-            [self.bss[bs_id].power_consumption],  # power consumption (1)
-            [self.bss[bs_id]._ue_stats[0, 0],
-             self.bss[bs_id].delay_ratio,
-             self.bss[bs_id]._ue_stats[1, 0],
-             self.bss[bs_id].drop_ratio],  # delay and drop ratio (4)
+            [bs.power_consumption],  # power consumption (1)
+            [bs._ue_stats[0, 0],
+             bs.delay_ratio,
+             bs._ue_stats[1, 0],
+             bs.drop_ratio],  # delay and drop ratio (4)
             # self.arrival_rates,  # arrival rates of new UEs in different delay cats (3)
             thrps / 1e6,  # required (idle, queued, active) and actual sum rates (4)
             bs_obs  # bs observations
-            # bs_id
         ], dtype=np.float32)
 
     # @cache_obs
@@ -349,6 +344,8 @@ class MultiCellNetwork:
         bs_obs = np.concatenate(bs_obs, dtype=np.float32)
         thrps = np.zeros(3 + 1)
         for ue in self.ues.values():
+            if ue.id not in ue._cache:
+                print(ue.id)
             thrps[ue.status] += ue.required_rate
             thrps[-1] += ue.data_rate
         return np.concatenate([

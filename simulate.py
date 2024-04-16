@@ -195,11 +195,10 @@ def simulate():
             b1_sleep = infos['b1_sleep'],
             b1_ue = infos['b1_ue'],
             b1_reward = infos['b1_rwd'],
-            b1_cover_ue = infos['b1_cover_ue'])
             # sm1_cnt = infos['sm1_cnt'],
             # op_pc = infos['operation_pc'],
             # actual_rate = infos['actual_rate'],
-            # drop_ratio = infos['drop_ratio'])
+            drop_ratio = infos['drop_ratio'])
         for k, v in train_info.items():
             wandb.log({k: v}, step=i)
         step_rewards.append(np.mean(rewards))
