@@ -5,7 +5,7 @@ renderMode = 'none'
 
 # base station params
 numBS = 25
-interBSDist = 600  # the distance between two adjacent BSs
+interBSDist = 700  # the distance between two adjacent BSs
 # cellRadius = 750  # the radius of a hexagon cell in meters
 txPower = 0.2  # average transmit power per antenna in watts
 maxPAPower = 3  # maximum antenna power in watts
@@ -47,8 +47,8 @@ def calculate_hex_centers(rows, cols, size=1):
     centers = []
     for r in range(rows):
         for c in range(cols):
-            x = 3/2 * c * size + 300
-            y = np.sqrt(3) * (r + 0.5 * (c % 2)) * size + 300
+            x = 3/2 * c * size + 200
+            y = np.sqrt(3) * (r + 0.5 * (c % 2)) * size + 200
             w = x if x > w else w
             h = y if y > h else h
             centers.append((x, y))
@@ -57,7 +57,7 @@ def calculate_hex_centers(rows, cols, size=1):
 
 centers, w, h = calculate_hex_centers(5, 5, size=interBSDist/np.sqrt(3))
 bsPositions = np.array(centers)
-areaSize = np.array([w+300, h+300])
+areaSize = np.array([w+200, h+200])
 print(areaSize)
 
 # areaSize = np.array([2.5, 2.5]) * interBSDist * 4

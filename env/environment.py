@@ -163,10 +163,12 @@ class MultiCellNetEnv(MultiAgentEnv):
             reward=reward,
             b0_drop_ratio=bs_drop_ratio[0][0],
             b0_pc=bs_pc[0][0],
-            b0_qos_rwd=(bs_reward[0][0]+bs_pc[0][0])/self.w_xqos,
+            b0_rwd=bs_reward[0][0],
+            b0_qos_rwd=(bs_reward[0][0]+bs_pc[0][0]*2)/self.w_qos,
             b1_drop_ratio=bs_drop_ratio[1][0],
             b1_pc=bs_pc[1][0],
-            b1_qos_rwd=(bs_reward[1][0]+bs_pc[1][0])/self.w_xqos,
+            b1_rwd=bs_reward[1][0],
+            b1_qos_rwd=(bs_reward[1][0]+bs_pc[1][0]*2)/self.w_qos,
             n_drop=n_drop,
             ue_no_bs=ue_no_bs,
         )
@@ -254,7 +256,7 @@ class MultiCellNetEnv(MultiAgentEnv):
             self._episode_count += 1
             if TRAIN:  # only for training logging
                 infos['step_rewards'] = self._reward_stats
-                infos['sm1_ratio'] = self.net.avg_sleep_ratios()[1]
+                infos['sm3_ratio'] = self.net.avg_sleep_ratios()[3]
                 infos['cm1_ratio'] = self.net.avg_conn_ratios()[2]
                 infos['cm0_ratio'] = self.net.avg_conn_ratios()[1]
                 infos['avg_sleep_switch'] = self.net.avg_num_sleep_switch()

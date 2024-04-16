@@ -495,7 +495,7 @@ class MappoTrainer(BaseTrainer):
                 rew_info = rew_df.describe().loc[['mean']].unstack()
                 rew_info.index = ['_'.join(idx) for idx in rew_info.index]
                 train_infos.update(
-                    sm1_ratio_mean = np.mean([d['sm1_ratio'] for d in infos]),
+                    sm3_ratio_mean = np.mean([d['sm3_ratio'] for d in infos]),
                     sleep_switch_mean = np.mean([d['avg_sleep_switch'] for d in infos]),
                     ant_switch_mean = np.mean([d['avg_ant_switch'] for d in infos]),
                     cm1_ratio = np.mean([d['cm1_ratio'] for d in infos]),

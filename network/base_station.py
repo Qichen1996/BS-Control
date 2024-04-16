@@ -568,7 +568,7 @@ class BaseStation:
         q_drop = self.drop_ratio
         n = n_done + n_drop + 1e-6
         r_qos = (-n_drop * q_drop + w_xqos * n_done * (1 - q_del)) / n
-        reward = w_qos * r_qos - pc_kw
+        reward = w_qos * r_qos - pc_kw * 2
         return reward
         
     # @timeit
@@ -588,7 +588,7 @@ class BaseStation:
         num_bs = 0
         for bs in self.net.bss.values():
             if bs is self: continue
-            if self.neighbor_dist(bs.id) > 0.65: continue
+            if self.neighbor_dist(bs.id) > 0.85: continue
             pub_obs = bs.observe_self()[:bs.public_obs_dim]
             mut_obs = self.observe_mutual(bs)
             obs.append(pub_obs)
