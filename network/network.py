@@ -122,7 +122,7 @@ class MultiCellNetwork:
 
     @timeit
     def step(self, dt):
-        for _ in range(2):
+        for _ in range(3):
             self.generate_new_ues(dt)
     
         self.scan_connections()
