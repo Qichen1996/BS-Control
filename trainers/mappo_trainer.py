@@ -466,14 +466,14 @@ class MappoTrainer(BaseTrainer):
                 self.insert(obs, cent_obs, reward, done, values, actions,
                             action_log_probs, rnn_states, rnn_states_critic)
 
-                if (step + 1) % 30 == 0:
-                    train_info = {}
-                    train_info.update(
-                        power_consumption_kw = np.mean(np.array([rwd['step_rewards'][-1]['pc_kw'] for rwd in infos])),
-                        drop_ratio = np.mean(np.array([rwd['step_rewards'][-1]['drop_ratio'] for rwd in infos])),
-                        delay_ratio = np.mean(np.array([rwd['step_rewards'][-1]['delay_ratio'] for rwd in infos])))
-                    self.log_train(train_info, steps)
-                steps += self.n_rollout_threads
+                # if (step + 1) % 30 == 0:
+                #     train_info = {}
+                #     train_info.update(
+                #         power_consumption_kw = np.mean(np.array([rwd['step_rewards'][-1]['pc_kw'] for rwd in infos])),
+                #         drop_ratio = np.mean(np.array([rwd['step_rewards'][-1]['drop_ratio'] for rwd in infos])),
+                #         delay_ratio = np.mean(np.array([rwd['step_rewards'][-1]['delay_ratio'] for rwd in infos])))
+                #     self.log_train(train_info, steps)
+                # steps += self.n_rollout_threads
 
             # compute return and update network
             self.compute()

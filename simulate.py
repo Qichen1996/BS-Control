@@ -86,7 +86,7 @@ def get_model_dir(args, env_args, run_dir, version=''):
         with open(config_path) as f:
             cfg = yaml.safe_load(f)
             if all(getattr(env_args, k) == cfg[k]['value']
-                   for k in model_params if k in cfg):
+                    for k in model_params if k in cfg):
                 return d
     raise FileNotFoundError("no such model directory")
 
@@ -175,12 +175,11 @@ def simulate():
     #     env.step()
     obs, _, _ = env.reset(render_mode)
 
-    for i in trange(args.num_env_steps, file=sys.stdout):
-        if i == 8640:
-            env._trajectory.clear()
-        actions = agent.act(obs, deterministic=not args.stochastic)
-        obs, _, rewards, done, _, _ = env.step(
-            actions, render_mode=render_mode, render_interval=render_interval)
+    # for i in trange(args.num_env_steps, file=sys.stdout):
+    #     actions = agent.act(obs, deterministic=not args.stochastic)
+    #     obs, _, rewards, done, _, _ = env.step(
+    #         actions, render_mode=render_mode, render_interval=render_interval)
+    # env._trajectory.clear()
         
 
     for i in trange(args.num_env_steps, file=sys.stdout):

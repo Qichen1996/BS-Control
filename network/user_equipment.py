@@ -83,7 +83,7 @@ class UserEquipment:
             if p > self.signal_thresh:
                 bs.add_to_cell(self)
                 q.append((p / (K + 1), i))
-        if not q and TRAIN:
+        if not q:
             # sorted_gains = sorted(enumerate(gains), key=lambda x: x[1], reverse=True)
             # for i in sorted_gains[:1]:
             #     self.net.bss[i[0]].add_to_cell(self)
@@ -95,6 +95,8 @@ class UserEquipment:
                     self.penalty = True
                     bs.add_to_max_cell(self)
                     q.append((p / (K + 1), i))
+        if not q:
+            self.required_rate   
         self._cover_cells = [it[1] for it in sorted(q, reverse=True)]
         return gains
 

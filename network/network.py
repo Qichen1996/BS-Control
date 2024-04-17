@@ -238,7 +238,8 @@ class MultiCellNetwork:
         if ue.demand > 0.:
             if not ue.serve_bss:
                 self.ue_no_bs += 1
-            self._ue_stats[1] += [1, ue.demand / ue.total_demand]
+            if ue._cover_cells:
+                self._ue_stats[1] += [1, ue.demand / ue.total_demand]
         else:
             self._ue_stats[0] += [1, ue.delay / ue.delay_budget]
         if DEBUG and ue.demand:

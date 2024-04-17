@@ -345,7 +345,6 @@ class BaseStation:
             self._total_stats['num_rejects'] += 1
 
     def add_to_cell(self, ue):
-        self.max_covered_ues.add(ue)
         self.covered_ues.add(ue)
         self._arrival_rate += ue.required_rate
 
@@ -354,7 +353,6 @@ class BaseStation:
 
     def remove_from_cell(self, ue):
         self.covered_ues.remove(ue)
-        self.max_covered_ues.remove(ue)
         if EVAL:
             self._total_stats['cell_traffic'] += ue.total_demand
             self._total_stats['cell_dropped_traffic'] += max(0, ue.demand)
