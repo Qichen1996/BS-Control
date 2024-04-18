@@ -164,11 +164,11 @@ class MultiCellNetEnv(MultiAgentEnv):
             b0_drop_ratio=bs_drop_ratio[0][0],
             b0_pc=bs_pc[0][0],
             b0_rwd=bs_reward[0][0],
-            b0_qos_rwd=(bs_reward[0][0]+bs_pc[0][0]*1e-3*2)/self.w_qos,
+            b0_qos_rwd=(bs_reward[0][0]+bs_pc[0][0]*1e-3)/self.w_qos,
             b1_drop_ratio=bs_drop_ratio[1][0],
             b1_pc=bs_pc[1][0],
             b1_rwd=bs_reward[1][0],
-            b1_qos_rwd=(bs_reward[1][0]+bs_pc[1][0]*1e-3*2)/self.w_qos,
+            b1_qos_rwd=(bs_reward[1][0]+bs_pc[1][0]*1e-3)/self.w_qos,
             n_drop=n_drop,
             ue_no_bs=ue_no_bs,
         )

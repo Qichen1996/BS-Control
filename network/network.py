@@ -122,7 +122,14 @@ class MultiCellNetwork:
 
     @timeit
     def step(self, dt):
-        for _ in range(3):
+        t = int(self.world_time_repr[5:7])
+        if t >= 11 and t < 19:
+            for _ in range(5):
+                self.generate_new_ues(dt)
+        elif (t >= 7 and t < 11) or (t >= 19 and t < 23):
+            for _ in range(3):
+                self.generate_new_ues(dt)
+        else:
             self.generate_new_ues(dt)
     
         self.scan_connections()
@@ -345,8 +352,6 @@ class MultiCellNetwork:
         bs_obs = np.concatenate(bs_obs, dtype=np.float32)
         thrps = np.zeros(3 + 1)
         for ue in self.ues.values():
-            if ue.id not in ue._cache:
-                print(ue.id)
             thrps[ue.status] += ue.required_rate
             thrps[-1] += ue.data_rate
         return np.concatenate([

@@ -9,7 +9,7 @@ export EVAL=0
 scenario="B"
 accelerate=1200  # 1 step = 0.02 * 1200 = 24 s
 n_training_threads=24
-n_rollout_threads=40
+n_rollout_threads=42
 num_env_steps=$((25200 * 60))  # steps_per_episode * episodes
 experiment="check"
 
