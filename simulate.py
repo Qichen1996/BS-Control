@@ -93,7 +93,7 @@ def get_model_dir(args, env_args, run_dir, version=''):
 env = make_env(env_args, seed=args.seed)
 
 obs_space = env.observation_space[0]
-cent_obs_space = env.cent_observation_space[0]
+cent_obs_space = env.cent_observation_space
 action_space = env.action_space[0]
 
 run_dir = get_run_dir(args, env_args)
@@ -153,18 +153,18 @@ render_mode = args.use_render and ('dash' if args.use_dash else 'frame')
 # from hiddenlayer import build_graph
 # build_graph(agent.actor, torch.tensor(obs))
 
-import wandb
-import socket
-wandb.init(
-            config=args,
-            project=args.env_name,
-            entity=args.user_name,
-            notes=socket.gethostname(),
-            name=f"{args.algorithm_name}_{args.experiment_name}_seed{args.seed}",
-            group=env_args.scenario,
-            job_type="training",
-            reinit=True,
-        )
+# import wandb
+# import socket
+# wandb.init(
+#             config=args,
+#             project=args.env_name,
+#             entity=args.user_name,
+#             notes=socket.gethostname(),
+#             name=f"{args.algorithm_name}_{args.experiment_name}_seed{args.seed}",
+#             group=env_args.scenario,
+#             job_type="training",
+#             reinit=True,
+#         )
 
 # %%
 def simulate():
@@ -175,33 +175,33 @@ def simulate():
     #     env.step()
     obs, _, _ = env.reset(render_mode)
 
-    # for i in trange(args.num_env_steps, file=sys.stdout):
-    #     actions = agent.act(obs, deterministic=not args.stochastic)
-    #     obs, _, rewards, done, _, _ = env.step(
-    #         actions, render_mode=render_mode, render_interval=render_interval)
-    # env._trajectory.clear()
+    for i in trange(args.num_env_steps, file=sys.stdout):
+        actions = agent.act(obs, deterministic=not args.stochastic)
+        obs, _, rewards, done, _, _ = env.step(
+            actions, render_mode=render_mode, render_interval=render_interval)
+    env._trajectory = env._trajectory[-1:]
         
 
     for i in trange(args.num_env_steps, file=sys.stdout):
         actions = agent.act(obs, deterministic=not args.stochastic)
         obs, _, rewards, done, infos, _ = env.step(
             actions, render_mode=render_mode, render_interval=render_interval)
-        train_info = {}
-        train_info.update(
-            avg_antennas = infos['avg_antennas'],
-            pc = infos['pc'],
-            sm0_cnt = infos['sm0_cnt'],
-            b1_pc = infos['b1_pc'],
-            b1_ant = infos['b1_ant'],
-            b1_sleep = infos['b1_sleep'],
-            b1_ue = infos['b1_ue'],
-            b1_reward = infos['b1_rwd'],
-            # sm1_cnt = infos['sm1_cnt'],
-            # op_pc = infos['operation_pc'],
-            # actual_rate = infos['actual_rate'],
-            drop_ratio = infos['drop_ratio'])
-        for k, v in train_info.items():
-            wandb.log({k: v}, step=i)
+        # train_info = {}
+        # train_info.update(
+        #     avg_antennas = infos['avg_antennas'],
+        #     pc = infos['pc'],
+        #     sm0_cnt = infos['sm0_cnt'],
+        #     b1_pc = infos['b1_pc'],
+        #     b1_ant = infos['b1_ant'],
+        #     b1_sleep = infos['b1_sleep'],
+        #     b1_ue = infos['b1_ue'],
+        #     b1_reward = infos['b1_rwd'],
+        #     # sm1_cnt = infos['sm1_cnt'],
+        #     # op_pc = infos['operation_pc'],
+        #     # actual_rate = infos['actual_rate'],
+        #     drop_ratio = infos['drop_ratio'])
+        # for k, v in train_info.items():
+        #     wandb.log({k: v}, step=i)
         step_rewards.append(np.mean(rewards))
     rewards = pd.Series(np.squeeze(step_rewards), name='reward')
     

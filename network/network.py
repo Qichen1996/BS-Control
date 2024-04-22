@@ -27,9 +27,9 @@ class MultiCellNetwork:
     net_obs_space = concat_box_envs(
         global_obs_space,
         duplicate_box_env(bs_obs_space, config.numBS))
-    net_obs_space = concat_box_envs(
-        up_obs_space,
-        bs_obs_space)
+    # net_obs_space = concat_box_envs(
+    #     up_obs_space,
+    #     bs_obs_space)
     # net_obs_space = global_obs_space
 
 
@@ -122,12 +122,15 @@ class MultiCellNetwork:
 
     @timeit
     def step(self, dt):
-        t = int(self.world_time_repr[5:7])
-        if t >= 11 and t < 19:
-            for _ in range(5):
+        h = int(self.world_time_repr[5:7])
+        if h >= 13 and h < 15:
+            for _ in range(4):
                 self.generate_new_ues(dt)
-        elif (t >= 7 and t < 11) or (t >= 19 and t < 23):
+        elif (h >= 12 and h < 13) or (h >= 15 and h < 18):
             for _ in range(3):
+                self.generate_new_ues(dt)
+        elif (h >= 11 and h < 12) or (h >= 18 and h < 24):
+            for _ in range(2):
                 self.generate_new_ues(dt)
         else:
             self.generate_new_ues(dt)

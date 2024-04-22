@@ -49,8 +49,8 @@ class SimplePolicy:
                     ant_switch = -1
                 elif thrp / thrp_req < 1:
                     ant_switch = 1
-            # return [1, new_sm, conn_mode]
-            return [ant_switch + 1, new_sm, conn_mode]
+            return [1, new_sm, conn_mode]
+            # return [ant_switch + 1, new_sm, conn_mode]
         return list(map(single_act, range(self.num_agents), obs))
 
 

@@ -237,9 +237,9 @@ class BaseStation:
         num_switch = self.ant_switch_opts[opt]
         if num_switch == 0: return
         self.switch_antenna += 1
-        energy_cost = self.ant_switch_energy * abs(num_switch)
-        if TRAIN:  # reduce number of antenna switches
-            self.consume_energy(energy_cost, 'antenna')
+        # energy_cost = self.ant_switch_energy * abs(num_switch)
+        # if TRAIN:  # reduce number of antenna switches
+        #     self.consume_energy(energy_cost, 'antenna')
         num_ant_new = self.num_ant + num_switch
         if (num_ant_new < self.min_antennas or
             num_ant_new > self.max_antennas or
@@ -262,8 +262,8 @@ class BaseStation:
             self._next_sleep = mode
             return
         self.switch_sleep += 1
-        if TRAIN:  # reduce number of sleep switches
-            self.consume_energy(self.sleep_switch_energy[mode], 'sleep')
+        # if TRAIN:  # reduce number of sleep switches
+        #     self.consume_energy(self.sleep_switch_energy[mode], 'sleep')
         # if mode == 3 and any(ue.status < 2 for ue in self.covered_ues):
         #     return  # cannot go to deep sleep if there are inactive UEs in coverage
         self._next_sleep = mode
@@ -566,7 +566,7 @@ class BaseStation:
         q_drop = self.drop_ratio
         n = n_done + n_drop + 1e-6
         r_qos = (-n_drop * q_drop + w_xqos * n_done * (1 - q_del)) / n
-        reward = w_qos * r_qos - pc_kw
+        reward = w_qos * r_qos - pc_kw * 0.1
         return reward
         
     # @timeit

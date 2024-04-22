@@ -1,6 +1,7 @@
 # %%
 import re
 import glob
+import sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -22,13 +23,13 @@ pio.templates.default = 'custom'
 
 scenario = '*'
 files = glob.glob(f'sim_stats/*/{scenario}/*/trajectory.csv')
-df = [pd.read_csv(f, index_col=0).iloc[1:] for f in files]
+df = [pd.read_csv(f, index_col=0) for f in files]
 for f in df:
     f.index = f.index.str.replace(',', '')
-agents = [tuple(f.split('\\')[1:4]) for f in files]
+agents = [tuple(f.split('/')[1:4]) for f in files]
 df = pd.concat(df, keys=agents, names=['policy', 'scenario', 'seed'])
 # df = df.sort_index(level=0, ascending=False)[~df.index.duplicated(keep='last')]
-df0 = df = df.reset_index(level=-1).groupby(['policy', 'scenario', 'time']).mean()
+df0 = df = df.reset_index(level=-1).groupby(['policy', 'scenario', 'time'], sort=False).mean()
 df.head()
 
 # %%
@@ -49,7 +50,7 @@ columns = ['actual_rate',
 
 def refactor(df):
     if group == 'baselines':
-        df = df.rename({'mappo_w_qos=8.0': 'MAPPO', 'fixed': 'Always-on', 'simple1_no_offload=True': 'Auto-SM1', 'dqn': 'DQN'})
+        df = df.rename({'mappo_w_qos=60.0': 'MAPPO', 'fixed': 'Always-on', 'simple1_no_offload=True': 'Auto-SM1', 'ippo': 'IPPO', 'dqn': 'DQN'})
     elif group == 'baselines-no-offload':
         df = df.rename({'mappo_no_offload=True': 'MAPPO', 'fixed_no_offload=True': 'Always-on', 'simple1_no_offload=True': 'Auto-SM1', 'dqn_no_offload=True': 'DQN'})
     elif group == 'wqos':
@@ -87,7 +88,7 @@ def refactor(df):
     return df
 
 if group in ['baselines', 'baselines-no-offload']:
-    policies = 'Always-on Auto-SM1 MAPPO DQN'.split()
+    policies = 'MAPPO'.split()
 elif group == 'wqos':
     policies = '1 4 7'.split()
 elif group == 'interf':
@@ -119,18 +120,25 @@ name_maps = {
     'sm0_cnt': 'active BSs', 'sm1_cnt': 'BSs in SM1',
     'sm2_cnt': 'BSs in SM2', 'sm3_cnt': 'BSs in SM3'
 }
-for i in range(7):
+for i in range(25):
     name_maps[f'bs_{i}_n_ants'] = f'antennas (BS {i})'
 vars_df = df.loc[policies, list(name_maps)].rename(columns=name_maps).copy()
 vars_df['energy efficiency (kb/J)'] = vars_df['data rate (Mb/s)'] / (
     vars_df['power consumption (kW)'] + 1e-6)
+#vars_df = vars_df.iloc[::win_sz]
 vars_df = vars_df.rolling(win_sz).mean().iloc[win_sz::win_sz]
+#vars_df.to_csv('filename.csv', index=True)
 vars_df['interference (dB)'] = 10 * np.log10(vars_df.pop('interference') + 1e-99)
 vars_df
 
 # %%
 stats = df0.groupby(level=[0,1]).mean().rename(columns=name_maps)
 stats
+
+#garbage graph
+#fig = px.scatter(x=[0, 1, 2, 3, 4], y=[0, 1, 4, 9, 16])
+#fig.show()
+#fig.write_image("random.pdf")
 
 # %%
 for scenario in vars_df.index.levels[1]:
@@ -151,11 +159,11 @@ for scenario in vars_df.index.levels[1]:
         'BSs in SM3': 'SM3'
     }).sort_index(axis=1)
     
-    # for g in _df.index.levels[0]:
-    #     f = px.area(_df.loc[g], labels={'value': 'number of BSs', 'variable': 'sleep mode'},
-    #                     color_discrete_sequence=np.array(px.colors.qualitative.Plotly)[[1, 4, 2, 0]])
-    #     f.update_xaxes(dtick=2)
-    #     f.write_image(f'sim_plots/{group}_{g}_{scenario}_SM_daily.pdf', scale=2)
+    for g in _df.index.levels[0]:
+        f = px.area(_df.loc[g], labels={'value': 'number of BSs', 'variable': 'sleep mode'},
+                        color_discrete_sequence=np.array(px.colors.qualitative.Plotly)[[1, 4, 2, 0]])
+        f.update_xaxes(dtick=2)
+        f.write_image(f'sim_plots/{group}_{g}_{scenario}_SM_daily.pdf', scale=2)
 
     re_pat = re.compile(r'antennas \((BS \d+)\)')
     cols = sorted([k for k in _sdf.keys() if re_pat.match(k)])
@@ -169,13 +177,20 @@ for scenario in vars_df.index.levels[1]:
         (k, re_pat.match(k)[1])
         for k in _df.columns))
     
-    # for g in _df.index.levels[0]:
-    #     f = px.line(_df.loc[g], labels={'value': 'number of active antennas', 'variable': ''})
-    #     f.update_xaxes(dtick=2)
-    #     f.write_image(f'sim_plots/{group}_{g}_{scenario}_ants_daily.pdf', scale=2)
+    for g in _df.index.levels[0]:
+        f = px.line(_df.loc[g], labels={'value': 'number of active antennas', 'variable': ''})
+        f.update_xaxes(dtick=2)
+        f.write_image(f'sim_plots/{group}_{g}_{scenario}_ants_daily.pdf', scale=2)
+    
+    for g in _df.index.levels[0]:
+        f = px.line(_df.loc[g], labels={'value': 'number of active antennas', 'variable': ''})
+        f.update_xaxes(dtick=2)
+        f.write_image(f'sim_plots/{group}_{g}_{scenario}_ants_daily.pdf', scale=2)
 
     for key, ser in _sdf.items():
         print(scenario, key)
+        if key == "drop ratio":
+            print(ser.groupby('policy').mean())
         _df = ser.unstack(level=0).reindex(idx)
         fig = px.line(_df, labels={'value': key}, log_y=key=='Interference')
         _df.index = pd.MultiIndex.from_tuples(
@@ -185,17 +200,10 @@ for scenario in vars_df.index.levels[1]:
         fig.update_yaxes(exponentformat='power')  # range=[ymin, ymax]
         key = key.replace('/', 'p')
         fig.update_xaxes(dtick=2)
-        # fig.write_image(f'sim_plots/{group}_{scenario}_{key}.pdf', scale=2)
-        fig1 = px.line(_df1, labels={'value': key}, template="plotly_white")
-        fig1.update_xaxes(dtick=2, showgrid=False, showline=True, gridwidth=1, gridcolor='grey',
-                          mirror=True, linewidth=1.2, linecolor='black', tickfont_size=22)
-        fig1.update_yaxes(showline=True, mirror=True, linewidth=1.2, linecolor='black',
-                          gridwidth=1, gridcolor='grey', tickfont_size=22)
-        fig1.update_layout(legend=dict(yanchor="top", y=0.7 if 'power' in key else 0.99,
-                                       xanchor="left", x=0.01, bordercolor="grey", 
-                                       borderwidth=1, font_size=20), 
-                           font_size=24, width=1000)
-        fig1.write_html(f'sim_plots/{group}_{scenario}_{key}_daily.html')
+        fig.write_image(f'sim_plots/{group}_{scenario}_{key}.pdf', scale=2)
+        fig1 = px.line(_df1, labels={'value': key})
+        fig1.update_xaxes(dtick=2)
+        fig1.write_image(f'sim_plots/{group}_{scenario}_{key}_daily.pdf', scale=2)
         
     # rate_df = _sdf[['Data Rate (Mb/s)', 'Arrival Rate (Mb/s)']]
     # arr_rates = rate_df['Arrival Rate (Mb/s)'].unstack().values
@@ -207,150 +215,150 @@ for scenario in vars_df.index.levels[1]:
     # fig.show()
 
 # %%
-def parse_np_series(s):
-    l = [np.fromstring(a[1:-1], sep=' ') for a in s]
-    return pd.DataFrame(l, index=s.index)
+# def parse_np_series(s):
+#     l = [np.fromstring(a[1:-1], sep=' ') for a in s]
+#     return pd.DataFrame(l, index=s.index)
 
-files = glob.glob(f'sim_stats/*/*/*/bs_stats.csv')
-dfs = [pd.read_csv(f, index_col=0) for f in files]
-agents = [f.split('\\')[1:-1] for f in files]
-kpis = [
-    'avg_pc', 
-    'avg_tx_power',
-    # 'avg_num_ants',
-    'avg_sum_rate',
-    # 'avg_req_sum_rate',
-    # 'avg_serving_ues', 'avg_queued_ues', 'avg_covered_ues',
-    'avg_sleep_ratios', 
-    # 'num_rejects', 
-    'avg_reject_rate',
-    # 'avg_cell_drop_ratio', 'avg_cell_data_rate', 'avg_sleep_switch_fps',
-    # 'ant_switches', 'avg_ant_switch_fps', 'disconnects'
-]
-bs_stats = pd.concat(dfs, keys=list(map(tuple, agents)), names=['policy', 'scenario', 'seed'])[kpis]
-bs_stats['active_ratio'], bs_stats['sm1_ratio'], bs_stats['sm2_ratio'], bs_stats['sm3_ratio'] = parse_np_series(bs_stats.pop(
-    'avg_sleep_ratios')).T.itertuples(index=False)
-bs_stats = bs_stats.groupby(['policy', 'scenario', 'id']).mean()
-bs_stats
+# files = glob.glob(f'sim_stats/*/*/*/bs_stats.csv')
+# dfs = [pd.read_csv(f, index_col=0) for f in files]
+# agents = [f.split('\\')[1:-1] for f in files]
+# kpis = [
+#     'avg_pc', 
+#     'avg_tx_power',
+#     # 'avg_num_ants',
+#     'avg_sum_rate',
+#     # 'avg_req_sum_rate',
+#     # 'avg_serving_ues', 'avg_queued_ues', 'avg_covered_ues',
+#     'avg_sleep_ratios', 
+#     # 'num_rejects', 
+#     'avg_reject_rate',
+#     # 'avg_cell_drop_ratio', 'avg_cell_data_rate', 'avg_sleep_switch_fps',
+#     # 'ant_switches', 'avg_ant_switch_fps', 'disconnects'
+# ]
+# bs_stats = pd.concat(dfs, keys=list(map(tuple, agents)), names=['policy', 'scenario', 'seed'])[kpis]
+# bs_stats['active_ratio'], bs_stats['sm1_ratio'], bs_stats['sm2_ratio'], bs_stats['sm3_ratio'] = parse_np_series(bs_stats.pop(
+#     'avg_sleep_ratios')).T.itertuples(index=False)
+# bs_stats = bs_stats.groupby(['policy', 'scenario', 'id']).mean()
+# bs_stats
 
-# %%
-temp_df = bs_stats.loc[('mappo_w_qos=4.0', 'B')]
-ks = ['active_ratio', 'sm1_ratio', 'sm2_ratio', 'sm3_ratio']
-temp_df[ks].T.plot(kind='bar')
-plt.show()
-for kpi in temp_df.drop(ks, axis=1).keys():
-    temp_df[kpi].plot(kind='bar', title=kpi)
-    plt.show()
-
-# %%
-files = glob.glob(f'sim_stats/*/*/*/ue_stats.csv')
-dfs = [pd.read_csv(f) for f in files]
-agents = [f.split('\\')[1:-1] for f in files]
-df = pd.concat(dfs, keys=list(map(tuple, agents)),
-               names=['policy', 'scenario', 'seed'])#.unstack()
-df['actual_rate'] = df.done / df.delay / 1e6
-df['req_rate'] = df.demand / df.delay_budget / 1e6
-df['rate_ratio'] = df['actual_rate'] / df['req_rate']
-df['ue_drop_ratio'] = df.dropped > 0
-df['drop_ratio'] = df.dropped / df.demand * 100
-ue_stats = df.groupby(['policy', 'scenario']).agg(['sum', 'mean'])
-ue_stats['drop_ratio'] = ue_stats.dropped['sum'] / ue_stats.demand['sum'] * 100
-tot_traffic = ue_stats.demand['sum']
-cols = ['avg_tx_power', 'avg_interference', 'avg_sinr', 'actual_rate', 'req_rate', 'ue_drop_ratio', 'rate_ratio', 'drop_ratio']
-ue_stats = ue_stats.drop('sum', axis=1, level=1).droplevel(1, axis=1)[cols]
-# ue_stats['data_rate_ratio'] = ue_stats.actual_rate / ue_stats.req_rate
-ue_stats
-
-# %%
-ue_stats_per_service = df.groupby(['policy', 'scenario', 'delay_budget']).mean()[['drop_ratio', 'actual_rate']]
-ue_stats_per_service
-
-# %%
-temp_df = refactor(ue_stats_per_service).loc[policies]
-for kpi in temp_df.keys():
-    temp_df[kpi].xs('urban', level=1).unstack().plot(kind='bar', title=kpi)
-    plt.show()
-
-# %%
-files = glob.glob(f'sim_stats/*/*/*/net_stats.csv')
-dfs = [pd.read_csv(f, header=None, index_col=0).T for f in files]
-agents = [f.split('\\')[1:-1] for f in files]
-net_stats = pd.concat(dfs, keys=list(map(tuple, agents)),
-                      names=['policy', 'scenario', 'seed']).droplevel(-1)
-net_stats = net_stats[['avg_pc', 'energy']].astype('float').groupby(['policy', 'scenario']).mean()
-net_stats['energy_efficiency'] = tot_traffic / net_stats.pop('energy') / 1e6
-net_stats
-
-# %%
-drop_policies = []
-selected_cols = ['avg_pc',
-                #  'Data Rate (Mb/s)',
-                #  'Required Sum Rate (Mb/s)',
-                #  'Total Transmit Power',
-                #  'avg_interference',
-                 'actual_rate',
-                 'rate_ratio',
-                 'energy_efficiency',
-                 'drop_ratio']
-renamed_index = {'fixed': 'Always On',
-                 'simple1_no_offload=True': 'Auto SM1',
-                #  'simple1_no_offload=True': 'Auto SM1 (no offload)',
-                 'mappo_w_qos=1.0': 'MAPPO (w_qos=1.0)',
-                 'mappo_w_qos=2.0': 'MAPPO (w_qos=2.0)',
-                 'mappo_w_qos=4.0': 'MAPPO (w_qos=4.0)',
-                 'mappo_w_qos=8.0': 'MAPPO (w_qos=8.0)',
-                 'mappo_w_qos=4.0_max_sleep=1': 'MAPPO (deepest_sleep=SM1)',
-                 'mappo_w_qos=4.0_max_sleep=2': 'MAPPO (deepest_sleep=SM2)',
-                 'mappo_w_qos=4.0_no_interf=True': 'MAPPO (ignore interference)',
-                 'mappo_w_qos=4.0_no_offload=True': 'MAPPO (no offloading)'}
-renamed_cols = {'avg_pc': 'total PC (W)',
-                'avg_interference': 'avg interference',
-                'actual_rate': 'UE data rate (Mb/s)',
-                'req_rate': 'UE required data rate (Mb/s)',
-                'rate_ratio': 'actual rate / required rate',
-                'drop_ratio': 'drop ratio (perc)',
-                'energy_efficiency': 'energy efficiency (Mb/J)'}
-stats_df = pd.concat([net_stats, ue_stats], axis=1)[selected_cols].astype('float')
-stats_df.drop(columns=['rate_ratio'], inplace=True)
-stats_df['energy saving (perc)'] = (
-    stats_df.loc['fixed', 'avg_pc'] - stats_df['avg_pc']
-) / stats_df.loc['fixed', 'avg_pc'] * 100
-stats_df1 = (stats_df
-             .drop(drop_policies, axis=0)
-             .rename_axis(['policy', 'scenario'])
-             .rename(index=renamed_index, columns=renamed_cols)
-             .loc[list(renamed_index.values())])
-# stats_df1.to_csv('sim-stats.csv')
-stats_df1
-
-# %%
-def copy_text(text):
-    s = pd.Series(text)
-    s.to_clipboard(index=False, header=False)
-    return text
-
-print(copy_text(stats_df1.to_latex()))
-
-# %%
-temp_df = refactor(stats_df).loc[policies].rename(columns=renamed_cols)
-temp_df.loc[('DQN', slice(None)), 'total PC (W)'] *= 0.9
-for kpi in temp_df.keys():
-    fig = px.bar(temp_df[kpi].unstack(), barmode='group', 
-                 labels={'value': kpi})
-    fig.write_image('bm_plots/'+f'{group}_{kpi}.pdf'.replace('/', 'p'), scale=2)
-    # fig.show()
-    # temp_df[kpi].unstack().plot(kind='bar', title=kpi)
-    # plt.savefig(f'{group}_{kpi}.pdf'.replace('/', 'p'), dpi=256)
-    # plt.show()
-
-# for kpi in stats_df.columns:
-#     stats_df.xs('B', level='scenario')[kpi].plot(kind='bar', title=kpi)
+# # %%
+# temp_df = bs_stats.loc[('mappo_w_qos=4.0', 'B')]
+# ks = ['active_ratio', 'sm1_ratio', 'sm2_ratio', 'sm3_ratio']
+# temp_df[ks].T.plot(kind='bar')
+# plt.show()
+# for kpi in temp_df.drop(ks, axis=1).keys():
+#     temp_df[kpi].plot(kind='bar', title=kpi)
 #     plt.show()
 
-# %%
-# ratio_df = stats_df.xs('B', level='scenario').loc[[
-#     'MAPPO (w_qos=4.0)', 'MAPPO (no offloading)']].rename({'MAPPO (w_qos=4.0)': 'MAPPO (with offloading)'}).T
-# ratio_df = ratio_df['MAPPO (no offloading)'] / ratio_df['MAPPO (with offloading)'] * 100
-# ratio_df.plot(kind='bar')
+# # %%
+# files = glob.glob(f'sim_stats/*/*/*/ue_stats.csv')
+# dfs = [pd.read_csv(f) for f in files]
+# agents = [f.split('\\')[1:-1] for f in files]
+# df = pd.concat(dfs, keys=list(map(tuple, agents)),
+#                names=['policy', 'scenario', 'seed'])#.unstack()
+# df['actual_rate'] = df.done / df.delay / 1e6
+# df['req_rate'] = df.demand / df.delay_budget / 1e6
+# df['rate_ratio'] = df['actual_rate'] / df['req_rate']
+# df['ue_drop_ratio'] = df.dropped > 0
+# df['drop_ratio'] = df.dropped / df.demand * 100
+# ue_stats = df.groupby(['policy', 'scenario']).agg(['sum', 'mean'])
+# ue_stats['drop_ratio'] = ue_stats.dropped['sum'] / ue_stats.demand['sum'] * 100
+# tot_traffic = ue_stats.demand['sum']
+# cols = ['avg_tx_power', 'avg_interference', 'avg_sinr', 'actual_rate', 'req_rate', 'ue_drop_ratio', 'rate_ratio', 'drop_ratio']
+# ue_stats = ue_stats.drop('sum', axis=1, level=1).droplevel(1, axis=1)[cols]
+# # ue_stats['data_rate_ratio'] = ue_stats.actual_rate / ue_stats.req_rate
+# ue_stats
 
-# %%
+# # %%
+# ue_stats_per_service = df.groupby(['policy', 'scenario', 'delay_budget']).mean()[['drop_ratio', 'actual_rate']]
+# ue_stats_per_service
+
+# # %%
+# temp_df = refactor(ue_stats_per_service).loc[policies]
+# for kpi in temp_df.keys():
+#     temp_df[kpi].xs('urban', level=1).unstack().plot(kind='bar', title=kpi)
+#     plt.show()
+
+# # %%
+# files = glob.glob(f'sim_stats/*/*/*/net_stats.csv')
+# dfs = [pd.read_csv(f, header=None, index_col=0).T for f in files]
+# agents = [f.split('\\')[1:-1] for f in files]
+# net_stats = pd.concat(dfs, keys=list(map(tuple, agents)),
+#                       names=['policy', 'scenario', 'seed']).droplevel(-1)
+# net_stats = net_stats[['avg_pc', 'energy']].astype('float').groupby(['policy', 'scenario']).mean()
+# net_stats['energy_efficiency'] = tot_traffic / net_stats.pop('energy') / 1e6
+# net_stats
+
+# # %%
+# drop_policies = []
+# selected_cols = ['avg_pc',
+#                 #  'Data Rate (Mb/s)',
+#                 #  'Required Sum Rate (Mb/s)',
+#                 #  'Total Transmit Power',
+#                 #  'avg_interference',
+#                  'actual_rate',
+#                  'rate_ratio',
+#                  'energy_efficiency',
+#                  'drop_ratio']
+# renamed_index = {'fixed': 'Always On',
+#                  'simple1_no_offload=True': 'Auto SM1',
+#                 #  'simple1_no_offload=True': 'Auto SM1 (no offload)',
+#                  'mappo_w_qos=1.0': 'MAPPO (w_qos=1.0)',
+#                  'mappo_w_qos=2.0': 'MAPPO (w_qos=2.0)',
+#                  'mappo_w_qos=4.0': 'MAPPO (w_qos=4.0)',
+#                  'mappo_w_qos=8.0': 'MAPPO (w_qos=8.0)',
+#                  'mappo_w_qos=4.0_max_sleep=1': 'MAPPO (deepest_sleep=SM1)',
+#                  'mappo_w_qos=4.0_max_sleep=2': 'MAPPO (deepest_sleep=SM2)',
+#                  'mappo_w_qos=4.0_no_interf=True': 'MAPPO (ignore interference)',
+#                  'mappo_w_qos=4.0_no_offload=True': 'MAPPO (no offloading)'}
+# renamed_cols = {'avg_pc': 'total PC (W)',
+#                 'avg_interference': 'avg interference',
+#                 'actual_rate': 'UE data rate (Mb/s)',
+#                 'req_rate': 'UE required data rate (Mb/s)',
+#                 'rate_ratio': 'actual rate / required rate',
+#                 'drop_ratio': 'drop ratio (perc)',
+#                 'energy_efficiency': 'energy efficiency (Mb/J)'}
+# stats_df = pd.concat([net_stats, ue_stats], axis=1)[selected_cols].astype('float')
+# stats_df.drop(columns=['rate_ratio'], inplace=True)
+# stats_df['energy saving (perc)'] = (
+#     stats_df.loc['fixed', 'avg_pc'] - stats_df['avg_pc']
+# ) / stats_df.loc['fixed', 'avg_pc'] * 100
+# stats_df1 = (stats_df
+#              .drop(drop_policies, axis=0)
+#              .rename_axis(['policy', 'scenario'])
+#              .rename(index=renamed_index, columns=renamed_cols)
+#              .loc[list(renamed_index.values())])
+# # stats_df1.to_csv('sim-stats.csv')
+# stats_df1
+
+# # %%
+# def copy_text(text):
+#     s = pd.Series(text)
+#     s.to_clipboard(index=False, header=False)
+#     return text
+
+# print(copy_text(stats_df1.to_latex()))
+
+# # %%
+# temp_df = refactor(stats_df).loc[policies].rename(columns=renamed_cols)
+# temp_df.loc[('DQN', slice(None)), 'total PC (W)'] *= 0.9
+# for kpi in temp_df.keys():
+#     fig = px.bar(temp_df[kpi].unstack(), barmode='group', 
+#                  labels={'value': kpi})
+#     fig.write_image('bm_plots/'+f'{group}_{kpi}.pdf'.replace('/', 'p'), scale=2)
+#     # fig.show()
+#     # temp_df[kpi].unstack().plot(kind='bar', title=kpi)
+#     # plt.savefig(f'{group}_{kpi}.pdf'.replace('/', 'p'), dpi=256)
+#     # plt.show()
+
+# # for kpi in stats_df.columns:
+# #     stats_df.xs('B', level='scenario')[kpi].plot(kind='bar', title=kpi)
+# #     plt.show()
+
+# # %%
+# # ratio_df = stats_df.xs('B', level='scenario').loc[[
+# #     'MAPPO (w_qos=4.0)', 'MAPPO (no offloading)']].rename({'MAPPO (w_qos=4.0)': 'MAPPO (with offloading)'}).T
+# # ratio_df = ratio_df['MAPPO (no offloading)'] / ratio_df['MAPPO (with offloading)'] * 100
+# # ratio_df.plot(kind='bar')
+
+# # %%
