@@ -84,10 +84,6 @@ class UserEquipment:
                 bs.add_to_cell(self)
                 q.append((p / (K + 1), i))
         if not q:
-            # sorted_gains = sorted(enumerate(gains), key=lambda x: x[1], reverse=True)
-            # for i in sorted_gains[:1]:
-            #     self.net.bss[i[0]].add_to_cell(self)
-            #     q.append((0, i[0]))
             for i, bs in self.net.bss.items():
                 M, p = bs.max_antennas, bs.tx_power
                 p = gains[i] * M * (M - 0) * p

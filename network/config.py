@@ -4,8 +4,8 @@ from utils import dB2lin, lin2dB
 renderMode = 'none'
 
 # base station params
-numBS = 25
-interBSDist = 700  # the distance between two adjacent BSs
+numBS = 49
+interBSDist = 400  # the distance between two adjacent BSs
 # cellRadius = 750  # the radius of a hexagon cell in meters
 txPower = 0.2  # average transmit power per antenna in watts
 maxPAPower = 3  # maximum antenna power in watts
@@ -23,8 +23,8 @@ powerAllocBase = 2.
 antennaSwitchOpts = [-4, 0, 4]
 sleepModeDeltas = [1, 0.69, 0.50, 0.29]
 wakeupDelays = [0, 1e-3, 1e-2, 1e-1]
-antSwitchEnergy = 0.01  # energy consumption of switch per antenna in Joules
-sleepSwitchEnergy = [0.02, 0.01, 0.01, 0.01]  # energy consumption of switching sleep mode in Joules
+antSwitchEnergy = 0  # energy consumption of switch per antenna in Joules
+sleepSwitchEnergy = [0, 0, 0, 0]  # energy consumption of switching sleep mode in Joules
 disconnectEnergy = 0.01  # energy consumption of a disconnection (before UE is done) in Joules
 bufferShape = (50, 1)  # shape of the buffer used to record past observations
 bufferChunkSize = 50  # chunk size to apply average pooling
@@ -47,17 +47,17 @@ def calculate_hex_centers(rows, cols, size=1):
     centers = []
     for r in range(rows):
         for c in range(cols):
-            x = 3/2 * c * size + 200
-            y = np.sqrt(3) * (r + 0.5 * (c % 2)) * size + 200
+            x = 3/2 * c * size + 300
+            y = np.sqrt(3) * (r + 0.5 * (c % 2)) * size + 300
             w = x if x > w else w
             h = y if y > h else h
             centers.append((x, y))
     return centers, w, h
 
 
-centers, w, h = calculate_hex_centers(5, 5, size=interBSDist/np.sqrt(3))
+centers, w, h = calculate_hex_centers(7, 7, size=interBSDist/np.sqrt(3))
 bsPositions = np.array(centers)
-areaSize = np.array([w+200, h+200])
+areaSize = np.array([w+300, h+300])
 print(areaSize)
 
 # areaSize = np.array([2.5, 2.5]) * interBSDist * 4

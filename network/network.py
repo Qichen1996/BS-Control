@@ -95,7 +95,6 @@ class MultiCellNetwork:
         self.wait_time = 0
         self.idle_time = 0
         self.ue_no_bs = 0
-        self.operation_pc = 0
         notice('Reset %s', repr(self))
 
     def reset_stats(self):
@@ -106,7 +105,6 @@ class MultiCellNetwork:
         self._arrival_buf[self._buf_idx] = 0
         self._ue_stats[:] = 0
         self.ue_no_bs = 0
-        self.operation_pc = 0
         if EVAL:
             self._stats_updated = False
 
@@ -122,18 +120,16 @@ class MultiCellNetwork:
 
     @timeit
     def step(self, dt):
-        h = int(self.world_time_repr[5:7])
-        if h >= 13 and h < 15:
-            for _ in range(4):
-                self.generate_new_ues(dt)
-        elif (h >= 12 and h < 13) or (h >= 15 and h < 18):
-            for _ in range(3):
-                self.generate_new_ues(dt)
-        elif (h >= 11 and h < 12) or (h >= 18 and h < 24):
-            for _ in range(2):
-                self.generate_new_ues(dt)
-        else:
-            self.generate_new_ues(dt)
+        # h = int(self.world_time_repr[5:7])
+        # if h >= 12 and h < 16:
+        #     for _ in range(3):
+        #         self.generate_new_ues(dt)
+        # elif (h >= 10 and h < 12) or (h >= 16 and h < 24):
+        #     for _ in range(2):
+        #         self.generate_new_ues(dt)
+        # else:
+        #     self.generate_new_ues(dt)
+        self.generate_new_ues(dt)
     
         self.scan_connections()
 
@@ -246,9 +242,9 @@ class MultiCellNetwork:
         self.wait_time += ue.wait_time
         self.idle_time += ue.idle_time
         if ue.demand > 0.:
-            if not ue.serve_bss:
-                self.ue_no_bs += 1
             if ue._cover_cells:
+                if not ue.serve_bss:
+                    self.ue_no_bs += 1
                 self._ue_stats[1] += [1, ue.demand / ue.total_demand]
         else:
             self._ue_stats[0] += [1, ue.delay / ue.delay_budget]
@@ -380,6 +376,7 @@ class MultiCellNetwork:
             required_rate=sum(ue.required_rate for ue in self.ues.values()) / 1e6,
             arrival_rate=self.arrival_rates.sum(),
             idle_ues=ue_counts[0], queued_ues=ue_counts[1], active_ues=ue_counts[2],
+            signal_power=sum(ue.signal_power for ue in self.ues.values()) / 1e3,
             interference=sum(ue.interference for ue in self.ues.values()) / (self.num_ue + 1e-3),
             sum_tx_power=sum(bs.transmit_power for bs in self.bss.values()),
             avg_antennas=sum(bs.num_ant for bs in self.bss.values()) / self.num_bs,

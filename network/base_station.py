@@ -16,6 +16,7 @@ class ConnectMode(enum.IntEnum):
 class BaseStation:
     max_antennas = config.maxAntennas
     min_antennas = config.minAntennas
+    inter_dist = config.interBSDist/1000
     tx_power = config.txPower
     bandwidth = config.bandWidth
     frequency = config.bsFrequency
@@ -135,6 +136,7 @@ class BaseStation:
             s['pc'] = self.power_consumption
             s['tx_power'] = self.transmit_power
             s['num_ants'] = self.num_ant
+            s['operation_pc'] = self.operation_pc
             # ue_stats = np.zeros(5)
             # for ue in self.ues.values():
             #     ue_stats += [ue._S, ue._I, ue._SINR, ue.data_rate, ue.required_rate]
@@ -200,8 +202,8 @@ class BaseStation:
 
     @property
     def operation_pc(self):  # operation power consumption
-        if self._pc is None:
-            self._pc = self.compute_power_consumption()
+        # if self._pc is None:
+        self._pc = self.compute_power_consumption()
         return self._pc
     
     @property
@@ -244,14 +246,14 @@ class BaseStation:
         if (num_ant_new < self.min_antennas or
             num_ant_new > self.max_antennas or
             num_ant_new <= self.num_ue):
-                return  # invalid action
+            return  # invalid action
         if EVAL:
             self._total_stats['ant_switches'] += abs(num_switch)
         self.num_ant = num_ant_new
         for ue in self.net.ues.values():
             ue.update_data_rate()
         if DEBUG:
-            debug(f'BS {self.id}: switched to {self.num_ant} antennas')
+            debug(f'BS {self.id}: switched to {self.num_ant} antennas')       
         self.update_power_allocation()
 
     def switch_sleep_mode(self, mode):
@@ -526,7 +528,7 @@ class BaseStation:
         return P
     
     def consume_energy(self, e, k):
-        self._energy_consumed += e
+        self._energy_consumed += e    
         # self._energy_consumed[k] += e
         self.net.consume_energy(e)
 
@@ -541,7 +543,6 @@ class BaseStation:
         self.update_connections()
         self.consume_energy(self.operation_pc * dt, 'operation')
         self._conn_time[self.conn_mode+1] += dt
-        self.net.operation_pc += self.operation_pc * dt
         self.update_timer(dt)
 
     @property
@@ -566,7 +567,7 @@ class BaseStation:
         q_drop = self.drop_ratio
         n = n_done + n_drop + 1e-6
         r_qos = (-n_drop * q_drop + w_xqos * n_done * (1 - q_del)) / n
-        reward = w_qos * r_qos - pc_kw * 0.1
+        reward = w_qos * r_qos - pc_kw
         return reward
         
     # @timeit
@@ -586,7 +587,7 @@ class BaseStation:
         num_bs = 0
         for bs in self.net.bss.values():
             if bs is self: continue
-            if self.neighbor_dist(bs.id) > 0.85: continue
+            if self.neighbor_dist(bs.id) > (self.inter_dist + 0.05): continue
             pub_obs = bs.observe_self()[:bs.public_obs_dim]
             mut_obs = self.observe_mutual(bs)
             obs.append(pub_obs)

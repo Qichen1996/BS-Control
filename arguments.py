@@ -142,10 +142,9 @@ def get_config():
                         help='critic learning rate (default: 5e-4)')
     parser.add_argument("--opti_eps", type=float, default=1e-5,
                         help='RMSprop optimizer epsilon (default: 1e-5)')
-    parser.add_argument("--weight_decay", type=float, default=0)
 
     # ppo parameters
-    parser.add_argument("--ppo_epoch", type=int, default=15,
+    parser.add_argument("--ppo_epoch", type=int, default=10,
                         help='number of ppo epochs (default: 15)')
     parser.add_argument("--use_clipped_value_loss",
                         action='store_false', default=True, help="by default, clip loss value. If set, do not clip loss value.")

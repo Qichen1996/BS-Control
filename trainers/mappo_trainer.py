@@ -139,7 +139,7 @@ def get_mappo_config():
     parser.add_argument("--weight_decay", type=float, default=0)
 
     # ppo parameters
-    parser.add_argument("--ppo_epoch", type=int, default=15,
+    parser.add_argument("--ppo_epoch", type=int, default=10,
                         help='number of ppo epochs (default: 15)')
     parser.add_argument("--use_clipped_value_loss",
                         action='store_false', default=True, help="by default, clip loss value. If set, do not clip loss value.")
@@ -339,6 +339,8 @@ class MappoTrainer(BaseTrainer):
                                                                               masks_batch, 
                                                                               available_actions_batch,
                                                                               active_masks_batch)
+
+
         # actor update
         imp_weights = torch.exp(action_log_probs - old_action_log_probs_batch)
 

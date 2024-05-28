@@ -50,7 +50,7 @@ columns = ['actual_rate',
 
 def refactor(df):
     if group == 'baselines':
-        df = df.rename({'mappo_w_qos=60.0': 'MAPPO', 'fixed': 'Always-on', 'simple1_no_offload=True': 'Auto-SM1', 'ippo': 'IPPO', 'dqn': 'DQN'})
+        df = df.rename({'mappo': 'MAPPO', 'fixed': 'Always-on', 'simple1_no_offload=True': 'Auto-SM1', 'simple1_64': 'Auto-SM1-64', 'ippo': 'IPPO', 'dqn': 'DQN'})
     elif group == 'baselines-no-offload':
         df = df.rename({'mappo_no_offload=True': 'MAPPO', 'fixed_no_offload=True': 'Always-on', 'simple1_no_offload=True': 'Auto-SM1', 'dqn_no_offload=True': 'DQN'})
     elif group == 'wqos':
@@ -88,7 +88,7 @@ def refactor(df):
     return df
 
 if group in ['baselines', 'baselines-no-offload']:
-    policies = 'MAPPO'.split()
+    policies = 'Always-on Auto-SM1 MAPPO IPPO'.split()
 elif group == 'wqos':
     policies = '1 4 7'.split()
 elif group == 'interf':
@@ -112,6 +112,7 @@ name_maps = {
     "active_ues": 'active',
     "queued_ues": 'wait',
     "required_rate": 'required rate',
+    'signal_power': 'signal power',
     'interference': 'interference',
     'actual_rate': 'data rate (Mb/s)',
     'arrival_rate': 'arrival rate (Mb/s)',
@@ -125,9 +126,10 @@ for i in range(25):
 vars_df = df.loc[policies, list(name_maps)].rename(columns=name_maps).copy()
 vars_df['energy efficiency (kb/J)'] = vars_df['data rate (Mb/s)'] / (
     vars_df['power consumption (kW)'] + 1e-6)
-#vars_df = vars_df.iloc[::win_sz]
-vars_df = vars_df.rolling(win_sz).mean().iloc[win_sz::win_sz]
-#vars_df.to_csv('filename.csv', index=True)
+# vars_df = vars_df.iloc[::win_sz]
+vars_df = vars_df.rolling(win_sz).mean().shift(-59)[::win_sz]
+# vars_df = vars_df.rolling(win_sz).mean()[win_sz::win_sz]
+# vars_df.to_csv('filename.csv', index=True)
 vars_df['interference (dB)'] = 10 * np.log10(vars_df.pop('interference') + 1e-99)
 vars_df
 
@@ -166,7 +168,7 @@ for scenario in vars_df.index.levels[1]:
         f.write_image(f'sim_plots/{group}_{g}_{scenario}_SM_daily.pdf', scale=2)
 
     re_pat = re.compile(r'antennas \((BS \d+)\)')
-    cols = sorted([k for k in _sdf.keys() if re_pat.match(k)])
+    cols = [k for k in _sdf.keys() if re_pat.match(k)]
     _df = _sdf[cols].copy()
     _df.index = pd.MultiIndex.from_tuples(
         [(g, *s.split()) for g, s in _sdf.index],
@@ -190,6 +192,10 @@ for scenario in vars_df.index.levels[1]:
     for key, ser in _sdf.items():
         print(scenario, key)
         if key == "drop ratio":
+            print(key)
+            print(ser.groupby('policy').mean())
+        elif key == "power consumption (kW)":
+            print(key)
             print(ser.groupby('policy').mean())
         _df = ser.unstack(level=0).reindex(idx)
         fig = px.line(_df, labels={'value': key}, log_y=key=='Interference')

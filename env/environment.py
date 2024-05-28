@@ -146,7 +146,7 @@ class MultiCellNetEnv(MultiAgentEnv):
         pc_kw = pc * 1e-3
         n = n_done + n_drop + 1e-6
         r_qos = (-n_drop * q_drop + self.w_xqos * n_done * (1 - q_del)) / n
-        reward = self.w_qos * r_qos - pc_kw * 0.01
+        reward = self.w_qos * r_qos - pc_kw * 0.1
         bs_reward = [self.net.get_bs_reward(i) for i in range(self.num_agents)]
         bs_pc = [self.net.get_bs_pc(i) for i in range(self.num_agents)]
         bs_drop_ratio = [self.net.get_drop_ratio(i) for i in range(self.num_agents)]
@@ -161,14 +161,6 @@ class MultiCellNetEnv(MultiAgentEnv):
             qos_reward=r_qos,
             pc_kw=pc_kw,
             reward=reward,
-            b0_drop_ratio=bs_drop_ratio[0][0],
-            b0_pc=bs_pc[0][0],
-            b0_rwd=bs_reward[0][0],
-            b0_qos_rwd=(bs_reward[0][0]+bs_pc[0][0]*1e-3)/self.w_qos,
-            b1_drop_ratio=bs_drop_ratio[1][0],
-            b1_pc=bs_pc[1][0],
-            b1_rwd=bs_reward[1][0],
-            b1_qos_rwd=(bs_reward[1][0]+bs_pc[1][0]*1e-3)/self.w_qos,
             n_drop=n_drop,
             ue_no_bs=ue_no_bs,
         )
@@ -218,7 +210,6 @@ class MultiCellNetEnv(MultiAgentEnv):
         if actions is not None:
             for i in range(self.num_agents):
                 self.net.set_action(i, actions[i])
-
         for i in range(substeps):
             if EVAL:
                 debug('Substep %d', i + 1)
@@ -251,6 +242,7 @@ class MultiCellNetEnv(MultiAgentEnv):
                 info('%s: %s', k, v)
             if self.save_trajectory:
                 self._trajectory.append(infos)
+            
 
         if done:
             self._episode_count += 1
@@ -278,12 +270,10 @@ class MultiCellNetEnv(MultiAgentEnv):
         info.update(
             reward = self._sim_steps and self._reward_stats[-1]['reward'],
             pc_kw = self._sim_steps and self._reward_stats[-1]['pc_kw'],
-            operation_pc = self._sim_steps and self.net.operation_pc,
             b1_pc = self._sim_steps and bs_pc[1],
-            b1_ant = self._sim_steps and bs_ant[1],
-            b1_sleep = self._sim_steps and bs_sleep[1],
-            b1_ue = self._sim_steps and bs_ue[1],
-            b1_rwd = self._sim_steps and bs_reward[1][0],
+            b2_pc = self._sim_steps and bs_pc[2],
+            b3_pc = self._sim_steps and bs_pc[3],
+            b4_pc = self._sim_steps and bs_pc[4],
             qos_reward = self._sim_steps and self._reward_stats[-1]['qos_reward'] * self.w_qos,
             drop_ratio = self._sim_steps and self._reward_stats[-1]['drop_ratio'],
         )

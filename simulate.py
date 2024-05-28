@@ -75,7 +75,7 @@ def get_model_dir(args, env_args, run_dir, version=''):
     p = 'wandb/run-*%s/files/' if args.use_wandb else '%s/models/'
     dirs = run_dir.glob(p % version)
     # for d in sorted(dirs, key=os.path.getmtime, reverse=True):
-    d = sorted(dirs, key=os.path.getmtime, reverse=True)[0]
+    d = sorted(dirs, key=os.path.getmtime, reverse=True)[1]
     print(d)
     # if env_args.no_interf ^ ('no_interf' in str(d)):
     #     continue
@@ -93,7 +93,7 @@ def get_model_dir(args, env_args, run_dir, version=''):
 env = make_env(env_args, seed=args.seed)
 
 obs_space = env.observation_space[0]
-cent_obs_space = env.cent_observation_space
+cent_obs_space = env.cent_observation_space[0]
 action_space = env.action_space[0]
 
 run_dir = get_run_dir(args, env_args)
@@ -175,11 +175,11 @@ def simulate():
     #     env.step()
     obs, _, _ = env.reset(render_mode)
 
-    for i in trange(args.num_env_steps, file=sys.stdout):
-        actions = agent.act(obs, deterministic=not args.stochastic)
-        obs, _, rewards, done, _, _ = env.step(
-            actions, render_mode=render_mode, render_interval=render_interval)
-    env._trajectory = env._trajectory[-1:]
+    # for i in trange(args.num_env_steps, file=sys.stdout):
+    #     actions = agent.act(obs, deterministic=not args.stochastic)
+    #     obs, _, rewards, done, _, _ = env.step(
+    #         actions, render_mode=render_mode, render_interval=render_interval)
+    # env._trajectory = env._trajectory[-1:]
         
 
     for i in trange(args.num_env_steps, file=sys.stdout):
@@ -188,18 +188,22 @@ def simulate():
             actions, render_mode=render_mode, render_interval=render_interval)
         # train_info = {}
         # train_info.update(
-        #     avg_antennas = infos['avg_antennas'],
-        #     pc = infos['pc'],
-        #     sm0_cnt = infos['sm0_cnt'],
+        #     # avg_antennas = infos['avg_antennas'],
+        #     # pc = infos['pc'],
+        #     # sm0_cnt = infos['sm0_cnt'],
         #     b1_pc = infos['b1_pc'],
-        #     b1_ant = infos['b1_ant'],
-        #     b1_sleep = infos['b1_sleep'],
-        #     b1_ue = infos['b1_ue'],
-        #     b1_reward = infos['b1_rwd'],
+        #     b2_pc = infos['b2_pc'],
+        #     b3_pc = infos['b3_pc'],
+        #     b4_pc = infos['b4_pc'],
+        #     # b1_ant = infos['b1_ant'],
+        #     # b1_sleep = infos['b1_sleep'],
+        #     # b1_ue = infos['b1_ue'],
+        #     # b1_reward = infos['b1_rwd'],
         #     # sm1_cnt = infos['sm1_cnt'],
         #     # op_pc = infos['operation_pc'],
         #     # actual_rate = infos['actual_rate'],
-        #     drop_ratio = infos['drop_ratio'])
+        #     # interference = infos['interference'],
+        #     )
         # for k, v in train_info.items():
         #     wandb.log({k: v}, step=i)
         step_rewards.append(np.mean(rewards))

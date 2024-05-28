@@ -2,8 +2,8 @@
 acc=3000
 
 for seed in 1 2 3; do
-for S in A B C; do
-    for w in 100; do
+for S in B; do
+    for w in 60; do
         ./simulate.py -S $S --w_qos $w --seed $seed -a $acc $@
     done
     w=60
