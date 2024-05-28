@@ -15,6 +15,11 @@
 /data/RAN_PM_data/
 /results/**/*/run*/
 !/results/**/*/wandb/*
+
+/analysis/*_plots/
+
+
+/analysis/*_stats/
 /results/
 /wandb/
 # /config.py
