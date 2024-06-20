@@ -4,7 +4,7 @@ from utils import dB2lin, lin2dB
 renderMode = 'none'
 
 # base station params
-numBS = 49
+numBS = 25
 interBSDist = 400  # the distance between two adjacent BSs
 # cellRadius = 750  # the radius of a hexagon cell in meters
 txPower = 0.2  # average transmit power per antenna in watts
@@ -55,7 +55,7 @@ def calculate_hex_centers(rows, cols, size=1):
     return centers, w, h
 
 
-centers, w, h = calculate_hex_centers(7, 7, size=interBSDist/np.sqrt(3))
+centers, w, h = calculate_hex_centers(5, 5, size=interBSDist/np.sqrt(3))
 bsPositions = np.array(centers)
 areaSize = np.array([w+300, h+300])
 print(areaSize)
