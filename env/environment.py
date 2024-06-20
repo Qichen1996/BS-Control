@@ -175,11 +175,11 @@ class MultiCellNetEnv(MultiAgentEnv):
     def get_centobs_agent(self, agent_id):
         return self.net.observe_bs_network(agent_id)
 
-    # def get_cent_obs(self):
-    #     return [self.get_centobs_agent(i) for i in range(self.num_agents)]
-
     def get_cent_obs(self):
-        return [self.net.observe_network()]
+        return [self.get_centobs_agent(i) for i in range(self.num_agents)]
+
+    # def get_cent_obs(self):
+    #     return [self.net.observe_network()]
     
     def reset(self, render_mode=None):
         # self.seed()
