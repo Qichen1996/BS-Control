@@ -498,13 +498,8 @@ class MappoTrainer(BaseTrainer):
                 rew_info.index = ['_'.join(idx) for idx in rew_info.index]
                 train_infos.update(
                     sm3_ratio_mean = np.mean([d['sm3_ratio'] for d in infos]),
-                    sleep_switch_mean = np.mean([d['avg_sleep_switch'] for d in infos]),
-                    ant_switch_mean = np.mean([d['avg_ant_switch'] for d in infos]),
-                    offload_switch_mean = np.mean([d['avg_offload_switch'] for d in infos]),
                     cm1_ratio = np.mean([d['cm1_ratio'] for d in infos]),
                     cm0_ratio = np.mean([d['cm0_ratio'] for d in infos]),
-                    wait_time_mean = np.mean([d['wait_time'] for d in infos]),
-                    idle_time_mean = np.mean([d['idle_time'] for d in infos]),
                     **rew_info)
                 avg_step_rew = np.mean(self.buffer.rewards)
                 # assert abs(avg_step_rew - train_infos['reward_mean']) < 1e-3
