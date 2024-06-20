@@ -80,9 +80,9 @@ class MultiCellNetEnv(MultiAgentEnv):
         
         self.observation_space = [self.net.bs_obs_space
                                   for _ in range(self.num_agents)]
-        self.cent_observation_space = self.net.net_obs_space
-        # self.cent_observation_space = [self.net.net_obs_space
-        #                                for _ in range(self.num_agents)]
+        # self.cent_observation_space = self.net.net_obs_space
+        self.cent_observation_space = [self.net.net_obs_space
+                                       for _ in range(self.num_agents)]
         
         self.action_space = [MultiDiscrete(BaseStation.action_dims)
                              for _ in range(self.num_agents)]
@@ -123,7 +123,7 @@ class MultiCellNetEnv(MultiAgentEnv):
         notice('Observation space: {}'.format(
             (self.num_agents, *self.observation_space[0].shape)))
         notice('Central observation space: {}'.format(
-            self.cent_observation_space.shape))
+            self.cent_observation_space[0].shape))
         notice('Action space: {}'.format(
             (self.num_agents, self.action_space[0].shape)))
         notice('Seed: {}'.format(self._seed))
@@ -148,9 +148,6 @@ class MultiCellNetEnv(MultiAgentEnv):
         r_qos = (-n_drop * q_drop + self.w_xqos * n_done * (1 - q_del)) / n
         reward = self.w_qos * r_qos - pc_kw * 0.1
         bs_reward = [self.net.get_bs_reward(i) for i in range(self.num_agents)]
-        bs_pc = [self.net.get_bs_pc(i) for i in range(self.num_agents)]
-        bs_drop_ratio = [self.net.get_drop_ratio(i) for i in range(self.num_agents)]
-        ue_no_bs = self.net.ue_no_bs
         # dropped = dr @ self.w_drop_cats
         # delay = dl @ self.w_delay_cats
         # reward = -(self.w_drop * dropped + self.w_pc * pc + self.w_delay * delay)
@@ -162,7 +159,6 @@ class MultiCellNetEnv(MultiAgentEnv):
             pc_kw=pc_kw,
             reward=reward,
             n_drop=n_drop,
-            ue_no_bs=ue_no_bs,
         )
             # num_ue=self.net.num_ue,
             # ant_num=self.net.avg_num_antennas())
@@ -171,7 +167,7 @@ class MultiCellNetEnv(MultiAgentEnv):
             # r_info['drop_ratios'] = dr
             # r_info['ue_delays'] = dl
         self._reward_stats.append(r_info)
-        return reward
+        return bs_reward
 
     def get_obs_agent(self, agent_id):
         return self.net.observe_bs(agent_id)
@@ -228,7 +224,7 @@ class MultiCellNetEnv(MultiAgentEnv):
         cent_obs = self.get_cent_obs()
         rewards = self.get_reward(cent_obs[0])
 
-        rewards = [[rewards]]  # shared reward for all agents
+        # rewards = [[rewards]]  # shared reward for all agents
 
         done = self._episode_steps >= self.episode_len
         infos = {}
@@ -251,8 +247,6 @@ class MultiCellNetEnv(MultiAgentEnv):
                 infos['sm3_ratio'] = self.net.avg_sleep_ratios()[3]
                 infos['cm1_ratio'] = self.net.avg_conn_ratios()[2]
                 infos['cm0_ratio'] = self.net.avg_conn_ratios()[1]
-                infos['avg_sleep_switch'] = self.net.avg_num_sleep_switch()
-                infos['avg_ant_switch'] = self.net.avg_num_antenna_switch()
                 infos['wait_time'] = self.net.wait_time
                 infos['idle_time'] = self.net.idle_time
 
@@ -262,18 +256,9 @@ class MultiCellNetEnv(MultiAgentEnv):
     
     def info_dict(self):
         info = self.net.info_dict(include_bs=self.include_bs_info)
-        bs_pc = [self.net.bss[i].get_pc for i in range(self.num_agents)]
-        bs_ant = [self.net.bss[i].num_ant for i in range(self.num_agents)]
-        bs_sleep = [self.net.bss[i].sleep for i in range(self.num_agents)]
-        bs_ue = [len(self.net.bss[i].ues) for i in range(self.num_agents)]
-        bs_reward = [self.net.get_bs_reward(i) for i in range(self.num_agents)]
         info.update(
             reward = self._sim_steps and self._reward_stats[-1]['reward'],
             pc_kw = self._sim_steps and self._reward_stats[-1]['pc_kw'],
-            b1_pc = self._sim_steps and bs_pc[1],
-            b2_pc = self._sim_steps and bs_pc[2],
-            b3_pc = self._sim_steps and bs_pc[3],
-            b4_pc = self._sim_steps and bs_pc[4],
             qos_reward = self._sim_steps and self._reward_stats[-1]['qos_reward'] * self.w_qos,
             drop_ratio = self._sim_steps and self._reward_stats[-1]['drop_ratio'],
         )

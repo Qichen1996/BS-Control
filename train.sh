@@ -20,7 +20,7 @@ lr=5e-4
 critic_lr=$lr
 value_loss_coef=1
 ppo_epoch=10
-num_mini_batch=64
+num_mini_batch=32
 
 w_qos=20
 w_xqos=0.005

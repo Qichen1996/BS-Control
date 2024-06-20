@@ -24,12 +24,12 @@ class MultiCellNetwork:
     up_obs_space = make_box_env([[0, np.inf]] * (1 + 4 + 4))
     id_obs_space = make_box_env([[0, np.inf]])
     bs_obs_space = BaseStation.total_obs_space
-    net_obs_space = concat_box_envs(
-        global_obs_space,
-        duplicate_box_env(bs_obs_space, config.numBS))
     # net_obs_space = concat_box_envs(
-    #     up_obs_space,
-    #     bs_obs_space)
+    #     global_obs_space,
+    #     duplicate_box_env(bs_obs_space, config.numBS))
+    net_obs_space = concat_box_envs(
+        up_obs_space,
+        bs_obs_space)
     # net_obs_space = global_obs_space
 
 
@@ -291,12 +291,6 @@ class MultiCellNetwork:
     
     def get_bs_reward(self, bs_id):
         return [self.bss[bs_id].get_reward(self.w_qos, self. w_xqos)]
-
-    def get_bs_pc(self, bs_id):
-        return [self.bss[bs_id].get_pc]
-    
-    def get_drop_ratio(self, bs_id):
-        return [self.bss[bs_id].drop_ratio]
     
     @cache_obs
     def observe_bs_network(self, bs_id):
@@ -399,19 +393,7 @@ class MultiCellNetwork:
 
     def avg_num_antennas(self):
         return np.mean([bs.num_ant for bs in self.bss.values()])
-    
-    def avg_num_antenna_switch(self):
-        n = np.mean([bs.switch_antenna for bs in self.bss.values()])
-        for bs in self.bss.values():
-            bs.switch_antenna = 0
-        return n
-    
-    def avg_num_sleep_switch(self):
-        n = np.mean([bs.switch_sleep for bs in self.bss.values()])
-        for bs in self.bss.values():
-            bs.switch_sleep = 0
-        return n
-
+     
     def calc_total_stats(self):
         for bs in self.bss.values():
             bs.calc_total_stats()

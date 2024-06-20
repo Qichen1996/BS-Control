@@ -110,8 +110,6 @@ class BaseStation:
         self._energy_consumed = 0
         self._sleep_time = np.zeros(self.num_sleep_modes)
         self._conn_time = np.zeros(self.num_conn_modes)
-        self.switch_sleep = 0
-        self.switch_antenna = 0
         # self._energy_consumed = defaultdict(float)
         self._buffer = np.zeros(self.buffer_shape, dtype=np.float32)
         # self._buffer = np.full(self.buffer_shape, np.nan, dtype=np.float32)
@@ -238,7 +236,6 @@ class BaseStation:
             assert opt in range(self.num_ant_switch_opts)
         num_switch = self.ant_switch_opts[opt]
         if num_switch == 0: return
-        self.switch_antenna += 1
         # energy_cost = self.ant_switch_energy * abs(num_switch)
         # if TRAIN:  # reduce number of antenna switches
         #     self.consume_energy(energy_cost, 'antenna')
@@ -263,7 +260,6 @@ class BaseStation:
         if mode == self.sleep:
             self._next_sleep = mode
             return
-        self.switch_sleep += 1
         # if TRAIN:  # reduce number of sleep switches
         #     self.consume_energy(self.sleep_switch_energy[mode], 'sleep')
         # if mode == 3 and any(ue.status < 2 for ue in self.covered_ues):

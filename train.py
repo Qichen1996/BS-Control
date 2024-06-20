@@ -81,7 +81,7 @@ def main(args):
     vars(args).update(vars(rl_args))
 
     # cuda
-    if args.cuda and not torch.cuda.is_available():
+    if args.cuda and torch.cuda.is_available():
         print("choose to use gpu...")
         device = torch.device("cuda:0")
         torch.set_num_threads(args.n_training_threads)

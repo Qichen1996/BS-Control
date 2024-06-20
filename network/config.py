@@ -72,53 +72,6 @@ print(areaSize)
 #     #       AREA[1]/2 + R * 3 * np.sin(a)]
 #     #      for a in np.linspace(0, 2*np.pi, 13)[:-1]]),
 # ])
-# mr = interBSDist * 2
-# l = mr * np.sin(np.pi/3)
-# bsPositions = np.vstack([
-#     bsPositions,
-#     np.array([[areaSize[0]/2 + mr * np.cos(a + np.pi/6), areaSize[1]/2 + mr * np.sin(a + np.pi/6)] for a in np.linspace(0, 2*np.pi, 6, endpoint=False)]),
-#     np.array([[areaSize[0]/2 + l * np.cos(a), areaSize[1]/2 + l * np.sin(a)] for a in np.linspace(0, 2*np.pi, 6, endpoint=False)])
-# ])
-# r = interBSDist * 3
-# bsPositions = np.vstack([
-#     bsPositions,
-#     np.array([[areaSize[0]/2 + r * np.cos(a + np.pi/6), areaSize[1]/2 + r * np.sin(a + np.pi/6)] for a in np.linspace(0, 2*np.pi, 6, endpoint=False)]),
-#     np.array([areaSize[0]/2 + r * np.cos(np.pi/6), areaSize[1]/2 + interBSDist * np.sin(np.pi/6)]),
-#     np.array([areaSize[0]/2 + r * np.cos(np.pi/6), areaSize[1]/2 - interBSDist * np.sin(np.pi/6)]),
-#     np.array([areaSize[0]/2 + interBSDist * np.cos(np.pi/6), areaSize[1]/2 + interBSDist * (2 + np.sin(np.pi/6))]),
-#     np.array([areaSize[0]/2 + mr * np.cos(np.pi/6), areaSize[1]/2 + interBSDist * 2]),
-#     np.array([areaSize[0]/2 - interBSDist * np.cos(np.pi/6), areaSize[1]/2 + interBSDist * (2 + np.sin(np.pi/6))]),
-#     np.array([areaSize[0]/2 - mr * np.cos(np.pi/6), areaSize[1]/2 + interBSDist * 2]),
-#     np.array([areaSize[0]/2 - r * np.cos(np.pi/6), areaSize[1]/2 + interBSDist * np.sin(np.pi/6)]),
-#     np.array([areaSize[0]/2 - r * np.cos(np.pi/6), areaSize[1]/2 - interBSDist * np.sin(np.pi/6)]),
-#     np.array([areaSize[0]/2 - interBSDist * np.cos(np.pi/6), areaSize[1]/2 - interBSDist * (2 + np.sin(np.pi/6))]),
-#     np.array([areaSize[0]/2 - mr * np.cos(np.pi/6), areaSize[1]/2 - interBSDist * 2]),
-#     np.array([areaSize[0]/2 + interBSDist * np.cos(np.pi/6), areaSize[1]/2 - interBSDist * (2 + np.sin(np.pi/6))]),
-#     np.array([areaSize[0]/2 + mr * np.cos(np.pi/6), areaSize[1]/2 - interBSDist * 2])
-# ])
-# outr = interBSDist * 4
-# bsPositions = np.vstack([
-#     bsPositions,
-#     np.array([[areaSize[0]/2 + outr * np.cos(a + np.pi/6), areaSize[1]/2 + outr * np.sin(a + np.pi/6)] for a in np.linspace(0, 2*np.pi, 6, endpoint=False)]),
-#     np.array([areaSize[0]/2 + outr * np.cos(np.pi/6), areaSize[1]/2]),
-#     np.array([areaSize[0]/2 + outr * np.cos(np.pi/6), areaSize[1]/2 + interBSDist]),
-#     np.array([areaSize[0]/2 + outr * np.cos(np.pi/6), areaSize[1]/2 - interBSDist]),
-#     np.array([areaSize[0]/2 + interBSDist * np.cos(np.pi/6), areaSize[1]/2 + interBSDist * (3 + np.sin(np.pi/6))]),
-#     np.array([areaSize[0]/2 + mr * np.cos(np.pi/6), areaSize[1]/2 + interBSDist * 3]),
-#     np.array([areaSize[0]/2 + r * np.cos(np.pi/6), areaSize[1]/2 + interBSDist * (2 + np.sin(np.pi/6))]),
-#     np.array([areaSize[0]/2 - interBSDist * np.cos(np.pi/6), areaSize[1]/2 + interBSDist * (3 + np.sin(np.pi/6))]),
-#     np.array([areaSize[0]/2 - mr * np.cos(np.pi/6), areaSize[1]/2 + interBSDist * 3]),
-#     np.array([areaSize[0]/2 - r * np.cos(np.pi/6), areaSize[1]/2 + interBSDist * (2 + np.sin(np.pi/6))]),
-#     np.array([areaSize[0]/2 - outr * np.cos(np.pi/6), areaSize[1]/2]),
-#     np.array([areaSize[0]/2 - outr * np.cos(np.pi/6), areaSize[1]/2 + interBSDist]),
-#     np.array([areaSize[0]/2 - outr * np.cos(np.pi/6), areaSize[1]/2 - interBSDist]),
-#     np.array([areaSize[0]/2 - interBSDist * np.cos(np.pi/6), areaSize[1]/2 - interBSDist * (3 + np.sin(np.pi/6))]),
-#     np.array([areaSize[0]/2 - mr * np.cos(np.pi/6), areaSize[1]/2 - interBSDist * 3]),
-#     np.array([areaSize[0]/2 - r * np.cos(np.pi/6), areaSize[1]/2 - interBSDist * (2 + np.sin(np.pi/6))]),
-#     np.array([areaSize[0]/2 + interBSDist * np.cos(np.pi/6), areaSize[1]/2 - interBSDist * (3 + np.sin(np.pi/6))]),
-#     np.array([areaSize[0]/2 + mr * np.cos(np.pi/6), areaSize[1]/2 - interBSDist * 3]),
-#     np.array([areaSize[0]/2 + r * np.cos(np.pi/6), areaSize[1]/2 - interBSDist * (2 + np.sin(np.pi/6))]),
-# ])
 probeGridSize = 20
 
 # obs names
