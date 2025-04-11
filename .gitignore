@@ -16,10 +16,8 @@
 /results/**/*/run*/
 !/results/**/*/wandb/*
 
-/analysis/*_plots/
+/analysis/sim_*/
 
-
-/analysis/*_stats/
 /results/
 /wandb/
 # /config.py
