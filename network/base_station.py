@@ -108,6 +108,10 @@ class BaseStation:
         self._wake_delay = 0
         self._arrival_rate = 0
         self._energy_consumed = 0
+        self.peak = 0
+        self.max = 0
+        self.r_qos = 0
+        self.dr = 0
         self._sleep_time = np.zeros(self.num_sleep_modes)
         self._conn_time = np.zeros(self.num_conn_modes)
         # self._energy_consumed = defaultdict(float)
@@ -539,6 +543,8 @@ class BaseStation:
         self.update_connections()
         self.consume_energy(self.operation_pc * dt, 'operation')
         self._conn_time[self.conn_mode+1] += dt
+        self.peak = max(self.peak, self.num_ue)
+        self.max = max(self.max, self.power_consumption)
         self.update_timer(dt)
 
     @property
@@ -563,7 +569,10 @@ class BaseStation:
         q_drop = self.drop_ratio
         n = n_done + n_drop + 1e-6
         r_qos = (-n_drop * q_drop + w_xqos * n_done * (1 - q_del)) / n
-        reward = w_qos * r_qos - pc_kw
+        self.r_qos = r_qos
+        self.dr = q_drop
+        # reward = w_qos * r_qos - pc_kw if q_drop >= 0.001 else - pc_kw
+        reward = w_qos * r_qos - pc_kw * 1.4
         return reward
         
     # @timeit

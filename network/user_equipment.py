@@ -33,6 +33,7 @@ class UserEquipment:
         self._gains = None
         self._thruput = None
         self._cover_cells = []
+        self._max_cover = []
         self.penalty = False
         self._sinr_stats = Counter()
         self.serve_bss = dict()
@@ -83,16 +84,19 @@ class UserEquipment:
             if p > self.signal_thresh:
                 bs.add_to_cell(self)
                 q.append((p / (K + 1), i))
+                self.penalty = False
         if not q:
+            m = []
             for i, bs in self.net.bss.items():
                 M, p = bs.max_antennas, bs.tx_power
                 p = gains[i] * M * (M - 0) * p
                 if p > self.signal_thresh:
                     self.penalty = True
                     bs.add_to_max_cell(self)
-                    q.append((p / (K + 1), i))
+                    m.append((p / (K + 1), i))
+            self._max_cover = [it[1] for it in sorted(m, reverse=True)]
         if not q:
-            self.required_rate   
+            self.required_rate
         self._cover_cells = [it[1] for it in sorted(q, reverse=True)]
         return gains
 
@@ -219,8 +223,9 @@ class UserEquipment:
 
     def quit(self):
         self.disconnect()
+        all_cover = list(set(self._cover_cells + self._max_cover))
         if self.demand > 0.:
-            for bs_id in self._cover_cells:
+            for bs_id in all_cover:
                 bs = self.net.get_bs(bs_id)
                 bs._ue_stats[1] += [1, self.demand / self.total_demand]
         else:
@@ -228,11 +233,10 @@ class UserEquipment:
             # for bs_id in self._cover_cells:
                 # bs = self.net.get_bs(bs_id)
                 bs._ue_stats[0] += [1, self.delay / self.delay_budget]
+        for i in self._max_cover:
+            self.net.get_bs(i).remove_from_max_cell(self)
         for i in self._cover_cells:
-            if self.penalty:
-                self.net.get_bs(i).remove_from_max_cell(self)               
-            else:
-                self.net.get_bs(i).remove_from_cell(self)
+            self.net.get_bs(i).remove_from_cell(self)
         if self.demand <= 0.:
             self.demand = 0.
             self.status = UEStatus.DONE
@@ -245,16 +249,16 @@ class UserEquipment:
             delay = self.delay
             service_time = self.t_served
             steps = self._sinr_stats.pop('T', 1)
-            # self.net.add_stat('ue_stats', dict(
-            #     demand = self.total_demand,
-            #     done = done,
-            #     dropped = dropped,
-            #     delay = delay,
-            #     delay_budget = self.delay_budget,
-            #     service_time = service_time,
-            #     **{'avg_'+k: self._sinr_stats[k]/steps
-            #        for k in list(self._sinr_stats)}
-            # ))
+            self.net.add_stat('ue_stats', dict(
+                demand = self.total_demand,
+                done = done,
+                dropped = dropped,
+                delay = delay,
+                delay_budget = self.delay_budget,
+                service_time = service_time,
+                **{'avg_'+k: self._sinr_stats[k]/steps
+                   for k in list(self._sinr_stats)}
+            ))
         self.net.remove_user(self.id)
         del self.__class__._cache[self.id]
     

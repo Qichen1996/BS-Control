@@ -102,7 +102,7 @@ def get_config():
     parser.add_argument("--use_wandb", action='store_false',
                         help="[for wandb usage], will log date to wandb server. or else will use tensorboard to log data.")
 
-    # network parameters
+    # # network parameters
     # parser.add_argument("--share_policy", action='store_false',
     #                     default=True, help='Whether agent share the same policy')
     # parser.add_argument("--use_centralized_V", action='store_false',
@@ -221,6 +221,8 @@ def get_config():
 
 def get_env_config():
     parser = argparse.ArgumentParser()
+    parser.add_argument("-l", "--level", type=int, default=1,
+                        help="traffic level")
     parser.add_argument("-S", "--scenario", type=str,
                         help="the traffic scenario of the simulation")
     parser.add_argument("-T", "--episode_len", type=int,

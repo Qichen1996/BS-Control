@@ -31,7 +31,7 @@ parser.add_argument("--stochastic", action="store_true",
 
 env_parser = get_env_config()
     
-parser.set_defaults(log_level='NOTICE', group_name='B')
+parser.set_defaults(log_level='NOTICE', group_name='A')
 env_parser.set_defaults(accelerate=accelerate)
 
 try:
@@ -75,7 +75,7 @@ def get_model_dir(args, env_args, run_dir, version=''):
     p = 'wandb/run-*%s/files/' if args.use_wandb else '%s/models/'
     dirs = run_dir.glob(p % version)
     # for d in sorted(dirs, key=os.path.getmtime, reverse=True):
-    d = sorted(dirs, key=os.path.getmtime, reverse=True)[1]
+    d = sorted(dirs, key=os.path.getmtime, reverse=True)[0]
     print(d)
     # if env_args.no_interf ^ ('no_interf' in str(d)):
     #     continue
@@ -85,11 +85,14 @@ def get_model_dir(args, env_args, run_dir, version=''):
         return d
     with open(config_path) as f:
         cfg = yaml.safe_load(f)
+        for k in model_params:
+            if k in cfg:
+                print(cfg[k]['value'])
         if all(getattr(env_args, k) == cfg[k]['value']
                 for k in model_params if k in cfg):
             return d
     raise FileNotFoundError("no such model directory")
-
+    
 env = make_env(env_args, seed=args.seed)
 
 obs_space = env.observation_space[0]
@@ -186,15 +189,22 @@ def simulate():
         actions = agent.act(obs, deterministic=not args.stochastic)
         obs, _, rewards, done, infos, _ = env.step(
             actions, render_mode=render_mode, render_interval=render_interval)
+        
+        # print(infos['b0_peak'])
+        # print(infos['b0_max'])
+        # print(infos['b0_operation_pc'])
+        # print(infos['b0_pc'])
         # train_info = {}
         # train_info.update(
         #     # avg_antennas = infos['avg_antennas'],
         #     # pc = infos['pc'],
         #     # sm0_cnt = infos['sm0_cnt'],
-        #     b1_pc = infos['b1_pc'],
-        #     b2_pc = infos['b2_pc'],
-        #     b3_pc = infos['b3_pc'],
-        #     b4_pc = infos['b4_pc'],
+        #     pc = infos['pc'],
+        #     pc_add = infos['pc_add'],
+        #     # b0_pc = infos['b0_pc'],
+        #     # b1_pc = infos['b1_pc'],
+        #     # b2_pc = infos['b2_pc'],
+        #     # b3_pc = infos['b3_pc'],
         #     # b1_ant = infos['b1_ant'],
         #     # b1_sleep = infos['b1_sleep'],
         #     # b1_ue = infos['b1_ue'],

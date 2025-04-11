@@ -24,12 +24,12 @@ class MultiCellNetwork:
     up_obs_space = make_box_env([[0, np.inf]] * (1 + 4 + 4))
     id_obs_space = make_box_env([[0, np.inf]])
     bs_obs_space = BaseStation.total_obs_space
-    # net_obs_space = concat_box_envs(
-    #     global_obs_space,
-    #     duplicate_box_env(bs_obs_space, config.numBS))
     net_obs_space = concat_box_envs(
-        up_obs_space,
-        bs_obs_space)
+        global_obs_space,
+        duplicate_box_env(bs_obs_space, config.numBS))
+    # net_obs_space = concat_box_envs(
+    #     up_obs_space,
+    #     bs_obs_space)
     # net_obs_space = global_obs_space
 
 
@@ -48,6 +48,7 @@ class MultiCellNetwork:
                  max_sleep_depth=3,
                  w_qos=16,
                  w_xqos=0.005,
+                 level=1,
                  has_interference=True,
                  allow_offload=True,
                  dpi_sample_rate=None):
@@ -56,6 +57,7 @@ class MultiCellNetwork:
         self.accelerate = accelerate
         self.w_qos = w_qos
         self.w_xqos = w_xqos
+        self.level = level
         self.bss = OrderedDict()
         self.ues = {}
         self._bs_poses = None
@@ -120,22 +122,68 @@ class MultiCellNetwork:
 
     @timeit
     def step(self, dt):
-        # h = int(self.world_time_repr[5:7])
-        # if h >= 12 and h < 16:
-        #     for _ in range(3):
+        h = int(self.world_time_repr[5:7])
+        # if h >= 14 and h < 18:
+        #     for _ in range(4):
         #         self.generate_new_ues(dt)
-        # elif (h >= 10 and h < 12) or (h >= 16 and h < 24):
-        #     for _ in range(2):
+        # elif (h >= 10 and h < 14) or (h >= 18 and h < 21):
+        #     for _ in range(1):
+        #         self.generate_new_ues(dt)
+        # elif (h >= 6 and h < 10) or (h >= 21 and h < 24):
+        #     for _ in range(1):
         #         self.generate_new_ues(dt)
         # else:
         #     self.generate_new_ues(dt)
-        self.generate_new_ues(dt)
+        for _ in range(self.level):
+            self.generate_new_ues(dt)
+        # if h >= 16 and h < 17:
+        #     for _ in range(6):
+        #         self.generate_new_ues(dt)
+        # elif (h >= 14 and h < 16) or (h >= 17 and h < 18):
+        #     for _ in range(9):
+        #         self.generate_new_ues(dt)
+        # elif (h >= 12 and h < 14) or (h >= 18 and h < 19):
+        #     for _ in range(6):
+        #         self.generate_new_ues(dt)
+        # elif (h >= 10 and h < 12) or (h >= 19 and h < 20):
+        #     for _ in range(5):
+        #         self.generate_new_ues(dt)
+        # elif h >= 9 and h < 10:
+        #     for _ in range(6):
+        #         self.generate_new_ues(dt)
+        # elif h >= 20 and h < 24:
+        #     for _ in range(9):
+        #         self.generate_new_ues(dt)
+        # elif h >= 2 and h < 3:
+        #     for _ in range(14):
+        #         self.generate_new_ues(dt)
+        # elif h >= 8 and h < 9:
+        #     for _ in range(11):
+        #         self.generate_new_ues(dt)
+        # elif h >= 7 and h < 8:
+        #     for _ in range(14):
+        #         self.generate_new_ues(dt)
+        # elif h >= 3 and h < 4:
+        #     for _ in range(17):
+        #         self.generate_new_ues(dt)
+        # elif h >= 4 and h < 5:
+        #     for _ in range(21):
+        #         self.generate_new_ues(dt)
+        # elif h >= 5 and h < 6:
+        #     for _ in range(18):
+        #         self.generate_new_ues(dt)
+        # elif h >= 6 and h < 7:
+        #     for _ in range(19):
+        #         self.generate_new_ues(dt)
+        # else:
+        #     for _ in range(11):
+        #         self.generate_new_ues(dt)
     
         self.scan_connections()
 
         for bs in self.bss.values():
             bs.step(dt)
-
+        
         for ue in list(self.ues.values()):
             ue.step(dt)
         
@@ -242,7 +290,9 @@ class MultiCellNetwork:
         self.wait_time += ue.wait_time
         self.idle_time += ue.idle_time
         if ue.demand > 0.:
-            if ue._cover_cells:
+            if ue._max_cover or ue._cover_cells:
+                # print(ue.pos)
+                # sys.exit()
                 if not ue.serve_bss:
                     self.ue_no_bs += 1
                 self._ue_stats[1] += [1, ue.demand / ue.total_demand]
@@ -255,8 +305,11 @@ class MultiCellNetwork:
     @timeit
     def scan_connections(self):
         for ue in self.ues.values():
-            if ue.idle and not ue.penalty:
-                ue.request_connection()
+            if (ue._cover_cells or ue._max_cover) and ue.idle:
+                if ue.penalty:
+                    self.measure_distances_and_gains(ue)
+                if not ue.penalty:
+                    ue.request_connection()
 
     @timeit
     def measure_distances_and_gains(self, ue):
@@ -270,7 +323,7 @@ class MultiCellNetwork:
             if not demand: continue
             if 'pos' not in kwargs:
                 kwargs['pos'] = np.append(np.random.rand(2) * self.area, UserEquipment.height)
-            self.add_user(service=service, demand=demand, delay_budget=delay, **kwargs)
+            self.add_user(service=service, demand=demand, delay_budget=delay, **kwargs)                
 
     def test_network_channel(self):
         state = tuple((bs.num_ant, bs.num_ue, bs.responding, bs.sleep > 0)
@@ -291,6 +344,12 @@ class MultiCellNetwork:
     
     def get_bs_reward(self, bs_id):
         return [self.bss[bs_id].get_reward(self.w_qos, self. w_xqos)]
+
+    def get_qos_reward(self, bs_id):
+        return self.bss[bs_id].r_qos
+
+    def get_drop_ratio(self, bs_id):
+        return self.bss[bs_id].dr
     
     @cache_obs
     def observe_bs_network(self, bs_id):

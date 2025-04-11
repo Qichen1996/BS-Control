@@ -207,7 +207,7 @@ class MappoTrainer(BaseTrainer):
         self.huber_delta = args.huber_delta
         self.recurrent_N = args.recurrent_N
         
-        cent_observation_space = self.envs.cent_observation_space[0] if \
+        cent_observation_space = self.envs.cent_observation_space if \
             self.use_centralized_V else self.envs.observation_space[0]
         
         self.policy = MappoPolicy(
@@ -498,6 +498,9 @@ class MappoTrainer(BaseTrainer):
                 rew_info.index = ['_'.join(idx) for idx in rew_info.index]
                 train_infos.update(
                     sm3_ratio_mean = np.mean([d['sm3_ratio'] for d in infos]),
+                    sm2_ratio_mean = np.mean([d['sm2_ratio'] for d in infos]),
+                    sm1_ratio_mean = np.mean([d['sm1_ratio'] for d in infos]),
+                    sm0_ratio_mean = np.mean([d['sm0_ratio'] for d in infos]),
                     cm1_ratio = np.mean([d['cm1_ratio'] for d in infos]),
                     cm0_ratio = np.mean([d['cm0_ratio'] for d in infos]),
                     **rew_info)

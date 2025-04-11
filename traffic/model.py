@@ -70,6 +70,8 @@ class TrafficModel:
         assert rem == 0, (self.interval, rem)
         
         self.rates = df * self.area / self.file_size  # files / s
+        print(self.area)
+        print(self.rates.values.max() * 1e-3)
         assert self.rates.values.max() * 1e-3 <= 1.
 
         self.densities = df / 1e6
@@ -119,7 +121,10 @@ class TrafficModel:
     
     def get_arrival_rates(self, time, dt):
         i = self._get_time_loc(time)
-        return self.rates.values[i] * dt  # (n_apps)
+        values = self.rates.values
+        shift_amount = 252
+        # values = np.concatenate((values[-shift_amount:],values[:-shift_amount]), axis=0)
+        return values[i] * dt  # (n_apps)
 
 
 if __name__ == '__main__':

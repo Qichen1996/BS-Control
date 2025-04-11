@@ -33,6 +33,7 @@ class MultiCellNetEnv(MultiAgentEnv):
     bs_poses = net_config.bsPositions
     num_agents = len(bs_poses)
     action_interval = config.actionInterval
+    traffic_levels = config.trafficLevels
 
     def __init__(
         self,
@@ -43,6 +44,7 @@ class MultiCellNetEnv(MultiAgentEnv):
         time_step=config.timeStep,
         accelerate=config.accelRate,
         action_interval=action_interval,
+        traffic_levels=traffic_levels,
         no_interf=False,
         no_offload=False,
         max_sleep=3,
@@ -50,6 +52,7 @@ class MultiCellNetEnv(MultiAgentEnv):
         # w_pc=w_pc,
         w_qos=w_qos,
         w_xqos=w_xqos,
+        level=1,
         # w_drop=w_drop,
         # w_delay=w_delay,
         seed=None,
@@ -70,19 +73,22 @@ class MultiCellNetEnv(MultiAgentEnv):
             has_interference=not no_interf,
             allow_offload=not no_offload,
             max_sleep_depth=max_sleep,
-            dpi_sample_rate=dpi_sample_rate
+            dpi_sample_rate=dpi_sample_rate,
+            level=level
         )
         
         if episode_len is None:
             episode_len = round(self.episode_time_len / accelerate / time_step / action_interval)
         self.episode_len = episode_len
         self.action_interval = action_interval
+        self.traffic_levels = traffic_levels
+        self.level = level
         
         self.observation_space = [self.net.bs_obs_space
                                   for _ in range(self.num_agents)]
-        # self.cent_observation_space = self.net.net_obs_space
-        self.cent_observation_space = [self.net.net_obs_space
-                                       for _ in range(self.num_agents)]
+        self.cent_observation_space = self.net.net_obs_space
+        # self.cent_observation_space = [self.net.net_obs_space
+        #                                for _ in range(self.num_agents)]
         
         self.action_space = [MultiDiscrete(BaseStation.action_dims)
                              for _ in range(self.num_agents)]
@@ -123,7 +129,7 @@ class MultiCellNetEnv(MultiAgentEnv):
         notice('Observation space: {}'.format(
             (self.num_agents, *self.observation_space[0].shape)))
         notice('Central observation space: {}'.format(
-            self.cent_observation_space[0].shape))
+            self.cent_observation_space.shape))
         notice('Action space: {}'.format(
             (self.num_agents, self.action_space[0].shape)))
         notice('Seed: {}'.format(self._seed))
@@ -146,8 +152,12 @@ class MultiCellNetEnv(MultiAgentEnv):
         pc_kw = pc * 1e-3
         n = n_done + n_drop + 1e-6
         r_qos = (-n_drop * q_drop + self.w_xqos * n_done * (1 - q_del)) / n
-        reward = self.w_qos * r_qos - pc_kw * 0.1
+        reward = self.w_qos * r_qos - pc_kw * 0.04
         bs_reward = [self.net.get_bs_reward(i) for i in range(self.num_agents)]
+        # r_qos = np.mean([self.net.get_qos_reward(i) for i in range(self.num_agents)])
+        # q_drop = np.mean([self.net.get_drop_ratio(i) for i in range(self.num_agents)])
+        q_drop = q_drop * q_drop / n
+        # reward = np.mean(bs_reward)
         # dropped = dr @ self.w_drop_cats
         # delay = dl @ self.w_delay_cats
         # reward = -(self.w_drop * dropped + self.w_pc * pc + self.w_delay * delay)
@@ -167,7 +177,7 @@ class MultiCellNetEnv(MultiAgentEnv):
             # r_info['drop_ratios'] = dr
             # r_info['ue_delays'] = dl
         self._reward_stats.append(r_info)
-        return bs_reward
+        return reward
 
     def get_obs_agent(self, agent_id):
         return self.net.observe_bs(agent_id)
@@ -175,11 +185,11 @@ class MultiCellNetEnv(MultiAgentEnv):
     def get_centobs_agent(self, agent_id):
         return self.net.observe_bs_network(agent_id)
 
-    def get_cent_obs(self):
-        return [self.get_centobs_agent(i) for i in range(self.num_agents)]
-
     # def get_cent_obs(self):
-    #     return [self.net.observe_network()]
+    #     return [self.get_centobs_agent(i) for i in range(self.num_agents)]
+
+    def get_cent_obs(self):
+        return [self.net.observe_network()]
     
     def reset(self, render_mode=None):
         # self.seed()
@@ -224,7 +234,7 @@ class MultiCellNetEnv(MultiAgentEnv):
         cent_obs = self.get_cent_obs()
         rewards = self.get_reward(cent_obs[0])
 
-        # rewards = [[rewards]]  # shared reward for all agents
+        rewards = [[rewards]]  # shared reward for all agents
 
         done = self._episode_steps >= self.episode_len
         infos = {}
@@ -245,6 +255,9 @@ class MultiCellNetEnv(MultiAgentEnv):
             if TRAIN:  # only for training logging
                 infos['step_rewards'] = self._reward_stats
                 infos['sm3_ratio'] = self.net.avg_sleep_ratios()[3]
+                infos['sm2_ratio'] = self.net.avg_sleep_ratios()[2]
+                infos['sm1_ratio'] = self.net.avg_sleep_ratios()[1]
+                infos['sm0_ratio'] = self.net.avg_sleep_ratios()[0]
                 infos['cm1_ratio'] = self.net.avg_conn_ratios()[2]
                 infos['cm0_ratio'] = self.net.avg_conn_ratios()[1]
                 infos['wait_time'] = self.net.wait_time
@@ -259,7 +272,7 @@ class MultiCellNetEnv(MultiAgentEnv):
         info.update(
             reward = self._sim_steps and self._reward_stats[-1]['reward'],
             pc_kw = self._sim_steps and self._reward_stats[-1]['pc_kw'],
-            qos_reward = self._sim_steps and self._reward_stats[-1]['qos_reward'] * self.w_qos,
+            qos_reward = self._sim_steps and self._reward_stats[-1]['qos_reward'],
             drop_ratio = self._sim_steps and self._reward_stats[-1]['drop_ratio'],
         )
         return info
@@ -267,7 +280,9 @@ class MultiCellNetEnv(MultiAgentEnv):
     @property
     def full_stats_dir(self):
         return os.path.join(
-            self.stats_dir, self.net.traffic_model.scenario.name, f'SEED{self._seed}')
+            self.stats_dir, self.traffic_levels[self.level-1], f'SEED{self._seed}')
+        # return os.path.join(
+        #     self.stats_dir, self.net.traffic_model.scenario.name, f'SEED{self._seed}')
         
     def close(self):
         if EVAL:

@@ -34,6 +34,10 @@ df.head()
 
 # %%
 group = 'baselines'
+# group = 'wqos'
+# group = 'time'
+# group = 'pta'
+# group = 'flu'
 columns = ['actual_rate',
            'arrival_rate',
            'interference',
@@ -46,21 +50,26 @@ columns = ['actual_rate',
            'reward',
            'pc_kw',
            'qos_reward',
+           'reward',
            'drop_ratio']
 
 def refactor(df):
     if group == 'baselines':
-        df = df.rename({'mappo': 'MAPPO', 'fixed': 'Always-on', 'simple1_no_offload=True': 'Auto-SM1', 'simple1_64': 'Auto-SM1-64', 'ippo': 'IPPO', 'dqn': 'DQN'})
+        df = df.rename({'mappo_w_qos=10.0': 'MAPPO', 'fixed': 'Always-on', 'simple1_no_offload=True': 'Auto-SM1', 'simple1_64': 'Auto-SM1-64', 'ippo': 'IPPO', 'ippo_eh': 'IPPO-eh', 'ippo_h': 'IPPO-h', 'ippo_m': 'IPPO-m', 'ippo_l': 'IPPO-l', 'ippo_500': 'IPPO-500', 'dqn': 'DQN'})
     elif group == 'baselines-no-offload':
         df = df.rename({'mappo_no_offload=True': 'MAPPO', 'fixed_no_offload=True': 'Always-on', 'simple1_no_offload=True': 'Auto-SM1', 'dqn_no_offload=True': 'DQN'})
     elif group == 'wqos':
-        df = df.rename_axis([
-            'w_qos', *df.index.names[1:]
-        ]).rename({
-            'mappo_w_qos=8.0': '7', # '8.0',
-            'mappo_w_qos=4.0': '4',
-            'mappo_w_qos=2.0': '2',
-            'mappo_w_qos=1.0': '1',
+        df = df.rename({
+            'mappo_w_qos=1.4': '1.4', # '8.0',
+            'mappo_w_qos=1.2': '1.2',
+            'mappo_w_qos=1.0': '1.0',
+            'mappo_w_qos=1.3': '1.3',
+            'mappo_w_qos=10.0': 'yes',
+            'mappo_w_qos=10.0_no_offload=True': 'no'
+        })
+    elif group == 'pta':
+        df = df.rename({
+            'fixed': 'Always-on', 'simple1_no_offload=True': 'Auto-SM1', 'ippo_original': 'Original', 'mappo_w_qos=32.0': 'MAPPO'
         })
     elif group == 'interf':
         df = df.rename_axis([
@@ -72,8 +81,8 @@ def refactor(df):
         df = df.rename_axis([
             'offloading', *df.index.names[1:]
         ]).rename({
-            'mappo_w_qos=4.0': 'yes',
-            'mappo_w_qos=4.0_no_offload=True': 'no'})
+            'mappo_w_qos=30.0': 'yes',
+            'mappo_w_qos=30.0_no_offload=True': 'no'})
     elif group == 'sm':
         df = df.rename_axis([
             'max sleep depth', *df.index.names[1:]
@@ -84,23 +93,35 @@ def refactor(df):
             # {'mappo_w_qos=4.0': '3',
             #  'mappo_w_qos=4.0_max_sleep=1': '1',
             #  'mappo_w_qos=4.0_max_sleep=2': '2'})
+    elif group == 'time':
+        df = df.rename({'fixed': 'Always-on', 'simple1_no_offload=True': 'Auto-SM1', 'ippo_eh_shift': 'Shift', 'ippo_eh': 'Original'})
+    elif group == 'flu':
+        df = df.rename({'fixed': 'Always-on', 'simple1_no_offload=True': 'Auto-SM1', 'ippo_original': 'Orignial', 'ippo_complex': 'Multiple-peak', 'mappo_w_qos=30.0': 'MAPPO'})
     df = df.rename(index={'A': 'rural', 'B': 'urban', 'C': 'work'}, level=1)
     return df
 
 if group in ['baselines', 'baselines-no-offload']:
+    policies = 'Always-on Auto-SM1 IPPO-eh IPPO-h IPPO-m IPPO-l'.split()
     policies = 'Always-on Auto-SM1 MAPPO IPPO'.split()
 elif group == 'wqos':
-    policies = '1 4 7'.split()
+    policies = '1.4 1.2 1.0'.split()
 elif group == 'interf':
     policies = 'considered ignored'.split()
 elif group == 'offload':
     policies = 'yes no'.split()
 elif group == 'sm':
     policies = '1 2 3'.split()
+elif group == 'time':
+    policies = 'Always-on Auto-SM1 Original Shift'.split()
+    # policies = 'MAPPO shift'.split()
+elif group == 'pta':
+    policies = 'Always-on Auto-SM1 1.5 3.6'.split()
+elif group == 'flu':
+    policies = 'Always-on Auto-SM1 Orignial Multiple-peak'.split()
 else:
     raise ValueError
 
-win_sz = len(df0.loc[(df0.index[0][0], 'B')]) // 168
+win_sz = len(df0.loc[(df0.index[0][0], 'eh')]) // 168
 df = refactor(df0)
 
 # %%
@@ -108,6 +129,7 @@ name_maps = {
     'pc_kw': 'power consumption (kW)',
     'drop_ratio': 'drop ratio',
     'reward': 'reward',
+    'qos_reward': 'qos $\\times$ $10^3$',
     "idle_ues": 'idle',
     "active_ues": 'active',
     "queued_ues": 'wait',
@@ -121,11 +143,12 @@ name_maps = {
     'sm0_cnt': 'active BSs', 'sm1_cnt': 'BSs in SM1',
     'sm2_cnt': 'BSs in SM2', 'sm3_cnt': 'BSs in SM3'
 }
-for i in range(25):
+for i in range(36):
     name_maps[f'bs_{i}_n_ants'] = f'antennas (BS {i})'
 vars_df = df.loc[policies, list(name_maps)].rename(columns=name_maps).copy()
 vars_df['energy efficiency (kb/J)'] = vars_df['data rate (Mb/s)'] / (
     vars_df['power consumption (kW)'] + 1e-6)
+vars_df['qos $\\times$ $10^3$'] *= 1e3
 # vars_df = vars_df.iloc[::win_sz]
 vars_df = vars_df.rolling(win_sz).mean().shift(-59)[::win_sz]
 # vars_df = vars_df.rolling(win_sz).mean()[win_sz::win_sz]
@@ -141,7 +164,7 @@ stats
 #fig = px.scatter(x=[0, 1, 2, 3, 4], y=[0, 1, 4, 9, 16])
 #fig.show()
 #fig.write_image("random.pdf")
-
+all_results = []
 # %%
 for scenario in vars_df.index.levels[1]:
     _sdf = vars_df.xs(scenario, level=1)
@@ -179,38 +202,66 @@ for scenario in vars_df.index.levels[1]:
         (k, re_pat.match(k)[1])
         for k in _df.columns))
     
-    for g in _df.index.levels[0]:
-        f = px.line(_df.loc[g], labels={'value': 'number of active antennas', 'variable': ''})
-        f.update_xaxes(dtick=2)
-        f.write_image(f'sim_plots/{group}_{g}_{scenario}_ants_daily.pdf', scale=2)
+    # for g in _df.index.levels[0]:
+    #     f = px.line(_df.loc[g], labels={'value': 'number of active antennas', 'variable': ''})
+    #     f.update_xaxes(dtick=2)
+    #     f.write_image(f'sim_plots/{group}_{g}_{scenario}_ants_daily.pdf', scale=2)
     
     for g in _df.index.levels[0]:
         f = px.line(_df.loc[g], labels={'value': 'number of active antennas', 'variable': ''})
         f.update_xaxes(dtick=2)
-        f.write_image(f'sim_plots/{group}_{g}_{scenario}_ants_daily.pdf', scale=2)
-
+        # f.write_image(f'sim_plots/{group}_{g}_{scenario}_ants_daily.pdf', scale=2)
+    result_df = pd.DataFrame()
     for key, ser in _sdf.items():
         print(scenario, key)
-        if key == "drop ratio":
-            print(key)
+        if key in ["drop ratio", "power consumption (kW)", "energy efficiency (kb/J)", "qos $\\times$ $10^3$"]:
             print(ser.groupby('policy').mean())
-        elif key == "power consumption (kW)":
+            mean_values = ser.groupby('policy').mean().reset_index()
+            mean_values.rename(columns={mean_values.columns[1]: key}, inplace=True)
+            mean_values["scenario"] = scenario
+
+            if result_df.empty:
+                result_df = mean_values
+            else:
+                result_df = pd.merge(result_df, mean_values, on=["scenario", "policy"], how="outer")
+        if key == "arrival rate (Mb/s)":
             print(key)
-            print(ser.groupby('policy').mean())
+            print(ser.groupby('policy').max()/ser.groupby('policy').mean())
+            # print(ser.groupby('policy').max())
         _df = ser.unstack(level=0).reindex(idx)
         fig = px.line(_df, labels={'value': key}, log_y=key=='Interference')
         _df.index = pd.MultiIndex.from_tuples(
             [tuple(s.split()) for s in _df.index],
             names=['day', 'time'])
         _df1 = _df.reset_index(level=1).groupby('time').mean()
+        if key in ["qos $\\times$ $10^3$"]:
+            key = r'$\text{qos}\ \times\ 10^3$'
         fig.update_yaxes(exponentformat='power')  # range=[ymin, ymax]
         key = key.replace('/', 'p')
         fig.update_xaxes(dtick=2)
-        fig.write_image(f'sim_plots/{group}_{scenario}_{key}.pdf', scale=2)
+        # fig.write_html(f'sim_plots/{group}_{scenario}_{key}.pdf', scale=2)
         fig1 = px.line(_df1, labels={'value': key})
         fig1.update_xaxes(dtick=2)
+        # fig1.update_layout(
+        #     xaxis=dict(
+        #         title=dict(font=dict(size=26)),  # 设置 x 轴标题字体大小
+        #         tickfont=dict(size=22)  # 设置 x 轴刻度字体大小
+        #     ),
+        #     yaxis=dict(
+        #         title=dict(font=dict(size=26)),  # 设置 y 轴标题字体大小
+        #         tickfont=dict(size=22)  # 设置 y 轴刻度字体大小
+        #     ),
+        #     legend=dict(
+        #         font=dict(size=18)  # 设置图例字体大小
+        #     )
+        # )
         fig1.write_image(f'sim_plots/{group}_{scenario}_{key}_daily.pdf', scale=2)
-        
+    all_results.append(result_df)
+final_result = pd.concat(all_results, ignore_index=True)
+columns_order = ['policy', 'scenario', 'power consumption (kW)', 'drop ratio', 'energy efficiency (kb/J)', 'qos $\\times$ $10^3$']
+final_result = final_result[columns_order]
+# final_result.to_csv("sim_stats/results.csv", index=False, float_format="%.6f")
+
     # rate_df = _sdf[['Data Rate (Mb/s)', 'Arrival Rate (Mb/s)']]
     # arr_rates = rate_df['Arrival Rate (Mb/s)'].unstack().values
     # # assert all(np.allclose(r1, r2) for r1, r2 in zip(arr_rates, arr_rates[1:]))
