@@ -27,9 +27,9 @@ class MultiCellNetwork:
     net_obs_space = concat_box_envs(
         global_obs_space,
         duplicate_box_env(bs_obs_space, config.numBS))
-    # net_obs_space = concat_box_envs(
-    #     up_obs_space,
-    #     bs_obs_space)
+    net_obs_space = concat_box_envs(
+        up_obs_space,
+        bs_obs_space)
     # net_obs_space = global_obs_space
 
 

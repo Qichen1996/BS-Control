@@ -6,18 +6,18 @@ export DEBUG=1
 export TRAIN=1
 export EVAL=0
 
-scenario="B"
+scenario="A"
 accelerate=1200  # 1 step = 0.02 * 1200 = 24 s
-n_training_threads=24
-n_rollout_threads=12
-num_env_steps=$((25200 * 40))  # steps_per_episode * episodes
+n_training_threads=42
+n_rollout_threads=8
+num_env_steps=$((25200 * 400))  # steps_per_episode * episodes
 experiment="check"
 
 algo="dqn"
 gamma=0.99
 lr=3e-4
 
-w_qos=30
+w_qos=60
 w_xqos=0.005
 
 log_interval=1

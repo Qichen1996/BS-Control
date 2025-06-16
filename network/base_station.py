@@ -572,7 +572,8 @@ class BaseStation:
         self.r_qos = r_qos
         self.dr = q_drop
         # reward = w_qos * r_qos - pc_kw if q_drop >= 0.001 else - pc_kw
-        reward = w_qos * r_qos - pc_kw * 1.4
+        # reward = w_qos * r_qos - pc_kw * 1.4
+        reward = w_qos * r_qos - pc_kw * 0.5
         return reward
         
     # @timeit

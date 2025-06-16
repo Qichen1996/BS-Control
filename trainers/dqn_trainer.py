@@ -57,7 +57,7 @@ class DQNTrainer(BaseTrainer):
     def __init__(self, config):
         super().__init__(config)
         
-        self.observation_space = self.envs.observation_space[0]
+        self.observation_space = self.envs.cent_observation_space[0]
         self.action_space = self.envs.action_space[0]
 
         args = config['all_args']
@@ -83,7 +83,7 @@ class DQNTrainer(BaseTrainer):
         # writer = self.writer
         
         episodes = 0
-        obs, _, _ = envs.reset()
+        _, obs, _ = envs.reset()
         
         pbar = trange(args.num_env_steps // args.n_rollout_threads)
         for step in pbar:
@@ -95,13 +95,13 @@ class DQNTrainer(BaseTrainer):
             else:
                 actions = self.take_actions(obs)
                 
-            # TRY NOT TO MODIFY: execute the game and log data.
-            next_obs, _ , rewards, done, infos, _ = envs.step(actions)
+            _, next_obs, rewards, done, infos, _ = envs.step(actions)
 
             obs = obs.reshape(-1, obs.shape[-1])
             obs1 = next_obs.reshape(-1, next_obs.shape[-1])
             actions = actions.reshape(-1, actions.shape[-1])
-            rewards = np.repeat(rewards.reshape(-1, 1), self.num_agents, axis=1).reshape(-1)
+            # rewards = np.repeat(rewards.reshape(-1, 1), self.num_agents, axis=1).reshape(-1)
+            rewards = rewards.reshape(-1, rewards.shape[-1])
             dones = np.repeat(done.reshape(-1, 1), self.num_agents, axis=1).reshape(-1)
             assert len(obs) == len(obs1) == len(actions) == len(rewards) == len(dones) \
                 == envs.num_envs * self.num_agents
